@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <!-- Basic meta settings -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Page title -->
+  <title>نقطة وصل - باحث</title>
+
+  <!-- Google font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+
+  <!-- External CSS file -->
+  <link rel="stylesheet" href="Style.css" />
+</head>
+
+<body>
+
+  <!-- ================= HEADER / HERO SECTION ================= -->
+  <header class="hero hero--searcher">
+
+    <!-- Overlay layer for styling -->
+    <div class="hero__overlay"></div>
+
+    <div class="wrap hero__wrap">
+
+      <!-- Top navigation bar -->
+      <div class="hero__top">
+        <div class="brand">نقطة وصل</div>
+
+        <!-- Navigation links -->
+        <nav class="nav-pill" >
+          <a href="#contact">تواصل معنا</a>
+          <a href="#how">كيف نعمل</a>
+          <a href="#features">مزايانا</a>
+        </nav>
+
+        
+        <!-- Login button / User area with notification bell -->
+        <div style="display: flex; align-items: center; gap: 8px;">
+        <a class="btn-login" href="Login.html" id="loginBtn">تسجيل الدخول</a>
+        
+        <!-- Notification Bell (hidden by default, shown when logged in) -->
+        <div class="notification-container" id="notificationContainer" style="display: none;">
+            <div class="notification-bell" id="notificationBell">
+            🔔
+            <span class="notification-badge" id="notificationBadge"></span>
+            </div>
+            <div class="notification-dropdown" id="notificationDropdown">
+            <div class="notification-header">📢 الإشعارات</div>
+            <div class="notification-list" id="notificationList"></div>
+            </div>
+        </div>
+        </div>
+
+        
+      </div>
+
+      <!-- Main hero content -->
+      <div class="hero__content">
+
+        <!-- Mode switch (Owner / Searcher) -->
+        <div class="mode-pill">
+          <a class="mode-pill__btn" href="owner.html">مالك</a>
+          <a class="mode-pill__btn is-active" href="index.html">باحث</a>
+        </div>
+
+        <!-- Title and description -->
+        <h1>اعثر على عقارك المناسب خلال دقائق.</h1>
+        <p>نساعدك تبحث، تقارن، وتوصل لصاحب العقار مباشرة — بدون تعقيد..</p>
+
+        <!-- ================= SEARCH FORM ================= -->
+        <form class="search-pill" action="map.html" method="get" id="searchForm">
+
+          <!-- Hidden input to store selected city -->
+          <input type="hidden" name="city" id="cityValue" required>
+
+          <!-- Custom dropdown -->
+          <div class="dd" id="cityDropdown">
+
+            <!-- Dropdown button -->
+            <button class="dd__btn" type="button">
+              <span class="dd__label" id="cityLabel">اختر المدينة</span>
+              <span class="dd__chev">▾</span>
+            </button>
+
+            <!-- Dropdown menu -->
+            <div class="dd__menu">
+
+              <!-- Search inside dropdown -->
+              <div class="dd__search">
+                <input type="text" id="citySearch" placeholder="ابحث عن مدينة..." autocomplete="off">
+              </div>
+
+              <!-- City options -->
+              <div class="dd__items" id="cityItems">
+
+              </div>
+
+              <!-- Message when no results -->
+              <div class="dd__empty" id="cityEmpty">لا توجد نتائج</div>
+            </div>
+          </div>
+
+          <!-- Submit search button -->
+          <button class="search-btn" type="submit">⌕</button>
+        </form>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <main>
+
+    <!-- Features section -->
+    <section id="features" class="section">
+      <div class="wrap">
+        <div class="tiny-title">مزايانا</div>
+        <h2 class="title">لماذا نقطة وصل؟</h2>
+        <p class="sub">نربطك مباشرة بمالكي العقارات، ونوفر لك تجربة تساعدك على اتخاذ القرار بثقة</p>
+
+        <!-- Feature cards -->
+        <div class="features">
+          <article class="feat">
+            <div class="feat__icon">↗</div>
+            <h3>منصة موثوقة وموحَّدة</h3>
+            <p>منصة تربط المالك والمستخدم مباشرة دون أى وسيط، بما يعزّز الشفافية ويخفض التكاليف.</p>
+          </article>
+
+          <article class="feat">
+            <div class="feat__icon">▦</div>
+            <h3>عقارات ذات جودة عالية</h3>
+            <p>عقارات مُقدَّمة بجودة عالية من خلال صور واضحة، ومقاطع فيديو دقيقة، وبيانات تفصيلية تتيح تصورًا واقعياً للعقار.</p>
+          </article>
+
+          <article class="feat">
+            <div class="feat__icon">⌕</div>
+            <h3>نظام بحث متقدّم</h3>
+            <p>نظام بحث متقدّم يمكّن المستخدم من لوصول للعقار المناسب خلال ثوان عبر فلاتر دقيقة حسب الموقع والسعر والنوع والمساحة.</p>
+          </article>
+
+          <article class="feat">
+            <div class="feat__icon">✦</div>
+            <h3>تجربة سهلة</h3>
+            <p>تجربة استخدام سلسة بواجهة مبسّطة تُسهّل على الباحثين استعراض العقارات وإتمام العمليات دون تعقيد.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works section -->
+    <section id="how" class="section">
+      <div class="wrap">
+
+          <!-- Section title -->
+        <h2 class="title title--right">كيف نعمل</h2>
+
+        <!-- Description -->
+        <p class="sub sub--right">
+         خطوات واضحة تُمكّنك من الوصول للعقار المناسب مباشرة
+        </p>
+
+        <!-- Steps -->
+        <div class="steps">
+
+          <div class="step">
+            <div class="step__num">01</div>
+            <div class="step__text">إنشاء حساب عبر الهوية الوطنية ورقم الجوال واستلام رمز التحقق (OTP)</div>
+          </div>
+
+          <div class="step">
+            <div class="step__num">02</div>
+            <div class="step__text">استعراض العقارات باستخدام فلاتر دقيقة حسب الموقع، السعر، النوع، والمساحة وغيرها</div>
+          </div>
+
+          <div class="step">
+            <div class="step__num">03</div>
+            <div class="step__text">فتح صفحة العقار لعرض الصور، الفيديو، والبيانات الكاملة</div>
+          </div>
+
+          <div class="step">
+            <div class="step__num">04</div>
+            <div class="step__text">التواصل المباشر مع المالك عبر نظام الرسائل الداخلي</div>
+          </div>
+
+          <div class="step">
+            <div class="step__num">05</div>
+            <div class="step__text">الإبلاغ عند الحاجة عن أي مخالفة أو محتوى غير صحيح لضمان بيئة موثوقة </div>
+          </div>
+
+        </div>
+
+
+      </div>
+    </section>
+  </main>
+
+
+<!-- ================================================== -->
+<!-- ================= JAVASCRIPT ================= -->
+  <script>
+
+    // Get elements
+    const dd = document.getElementById("cityDropdown");
+    const btn = dd.querySelector(".dd__btn");
+    const cityLabel = document.getElementById("cityLabel");
+    const cityValue = document.getElementById("cityValue");
+    const form = document.getElementById("searchForm");
+
+    const searchInput = document.getElementById("citySearch");
+    const emptyMsg = document.getElementById("cityEmpty");
+
+    const saudiCities = [
+  "بريدة",
+  "رياض الخبراء",
+  "الرياض",
+  "جدة",
+  "مكة",
+  "المدينة المنورة",
+  "الدمام",
+  "الخبر",
+  "الظهران",
+  "عنيزة",
+  "حائل",
+  "تبوك",
+  "أبها",
+  "خميس مشيط",
+  "جازان",
+  "نجران",
+  "الطائف",
+  "ينبع",
+  "الجبيل",
+  "الأحساء",
+  "عرعر",
+  "سكاكا",
+  "القريات"
+];
+
+const cityItemsContainer = document.getElementById("cityItems");
+
+cityItemsContainer.innerHTML = saudiCities.map(city => `
+  <button class="dd__item" type="button" data-value="${city}">
+    ${city}
+  </button>
+`).join('');
+
+    let items = Array.from(dd.querySelectorAll(".dd__item"));
+
+    // Mark dropdown as empty initially
+    dd.classList.add("is-empty");
+
+    // Open dropdown
+    function openDD(){
+      dd.classList.add("is-open");
+    }
+
+    // Close dropdown
+    function closeDD(){
+      dd.classList.remove("is-open");
+    }
+
+    // Toggle dropdown
+    btn.addEventListener("click", () => {
+      dd.classList.contains("is-open") ? closeDD() : openDD();
+    });
+
+    // Select city
+    function selectCity(val){
+      cityLabel.textContent = val; // show selected city
+      cityValue.value = val; // store value
+      dd.classList.remove("is-empty");
+      closeDD();
+    }
+
+    // Add click to each city
+    items.forEach(item => {
+      item.addEventListener("click", () => selectCity(item.dataset.value));
+    });
+
+    // Filter cities
+    function filterItems(q){
+      const query = q.toLowerCase();
+      let count = 0;
+
+      items.forEach(item => {
+        const match = item.dataset.value.toLowerCase().includes(query);
+        item.style.display = match ? "" : "none";
+        if(match) count++;
+      });
+
+      // Show message if no results
+      emptyMsg.style.display = count === 0 ? "block" : "none";
+    }
+
+    // Search typing
+    searchInput.addEventListener("input", (e) => filterItems(e.target.value));
+
+    // Prevent submit if no city selected
+    form.addEventListener("submit", (e) => {
+      if (!cityValue.value) {
+        e.preventDefault();
+        openDD();
+      }
+    });
+
+  </script>
+
+
+
+<!-- ====================== footer =================================== -->
+<footer class="footer">
+
+  <div class="footer-container">
+
+    <!-- RIGHT SIDE -->
+    <div class="footer-right">
+      <h2 class="footer-logo">نقطة وصل</h2>
+      <p class="footer-desc">
+        منصة رقمية لعرض العقارات تربط المالك والباحث مباشرة دون وسطاء،
+        وتوفر تجربة موثوقة قائمة على التحقق، الشفافية، وجودة المحتوى.
+      </p>
+    </div>
+
+    <!-- LEFT SIDE -->
+    <div class="footer-left">
+
+      <!-- COLUMN 1 -->
+      <div class="footer-col">
+        <h4>الدعم</h4>
+        <a href="mailto:nuqtatwasl.2026@outlook.com">تواصل معنا</a>
+        <a href="#">الاسئلة الشائعة</a>
+        <a href="#">الشروط والاحكام</a>
+      </div>
+
+      <!-- COLUMN 2 -->
+      <div class="footer-col">
+        <h4>روابط سريعة</h4>
+        <a href="index.html">الرئيسية</a>
+        <a href="map.html">الخريطة</a>
+        <a href="#" id="accountLink">الحساب</a>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- BOTTOM -->
+  <div class="footer-bottom">
+    © 2026 Qassim - نقطة وصل
+  </div>
+
+</footer>
+
+</body>
+<script>
+const loginBtn = document.getElementById("loginBtn");
+const user = JSON.parse(localStorage.getItem("user") || "null");
+
+if (loginBtn && user) {
+  let roleText = "";
+  let profilePage = "searcher_profile.html";
+
+  if (user.role === "owner") {
+  roleText = "مالك";
+  profilePage = "owner_profile.html";
+
+} else if (user.role === "searcher") {
+  roleText = "باحث";
+  profilePage = "searcher_profile.html";
+
+} else if (user.role === "admin") {
+  roleText = "مدير النظام";
+  profilePage = "admin.html";
+}
+
+ loginBtn.innerHTML =
+    "<span dir='ltr'>(" + roleText + ")</span> " + user.full_name;
+  loginBtn.href = profilePage;
+}
+</script>
+
+<script src="/backend/notification.js"></script>
+
+<!-- Authentication step -->
+<script src="backend/auth.js"></script>
+
+<!-- security -->
+<script src="backend/guard.js"></script>
+
+</html>

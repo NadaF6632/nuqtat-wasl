@@ -1,0 +1,823 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>تفاصيل البلاغ | نقطة وصل</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Tajawal", sans-serif; background: #f5f6fa; }
+    
+    .loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #f5f6fa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #e2e8f0;
+      border-top-color: #b58b63;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    .dash-shell { display: none; min-height: 100vh; }
+    .dash-side { 
+      width: 260px; 
+      background: #1a1a2e; 
+      padding: 24px 16px; 
+      display: flex; 
+      flex-direction: column; 
+      justify-content: space-between; 
+      position: fixed; 
+      right: 0; 
+      top: 0; 
+      bottom: 0; 
+      overflow-y: auto;
+      z-index: 100;
+    }
+    .dash-main { 
+      flex: 1; 
+      padding: 24px 32px; 
+      margin-right: 260px;
+      min-height: 100vh;
+    }
+    .dash-center { max-width: 1200px; margin: 0 auto; }
+    
+    .dash-brand { font-weight: 900; font-size: 24px; color: #fff; margin-bottom: 32px; text-align: center; }
+    .dash-nav { display: flex; flex-direction: column; gap: 8px; }
+    .dash-link { padding: 12px 16px; border-radius: 12px; font-size: 14px; color: rgba(255,255,255,0.7); text-decoration: none; display: block; font-weight: 500; }
+    .dash-link:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    .dash-link.is-active { background: #b58b63; color: #fff; }
+    .dash-sep { height: 1px; background: rgba(255,255,255,0.1); margin: 20px 0; }
+    .dash-bottom { display: flex; flex-direction: column; gap: 10px; }
+    .dash-btn { 
+      width: 100%; 
+      padding: 10px; 
+      border-radius: 10px; 
+      border: none; 
+      cursor: pointer; 
+      font-weight: 700;
+      font-family: "Tajawal", sans-serif;
+      font-size: 14px;
+    }
+    .dash-btn--ghost { background: rgba(255,255,255,0.1); color: #fff; }
+    
+    .dash-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+    .back-button { background: none; border: none; font-size: 24px; cursor: pointer; color: #1a1a2e; margin-left: 16px; font-family: "Tajawal", sans-serif; }
+    .dash-title { font-size: 24px; font-weight: 800; color: #1a1a2e; }
+    .head-left { display: flex; align-items: center; gap: 12px; }
+    .user-avatar { width: 40px; height: 40px; background: #b58b63; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
+    
+    /* Report Info Card */
+    .report-info {
+      background: #fff;
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .info-item {
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 12px;
+    }
+    .info-label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+    .info-value {
+      font-weight: 700;
+      font-size: 15px;
+      color: #1a1a2e;
+    }
+    
+    /* Chat Section */
+    .chat-section {
+      background: #fff;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      margin-bottom: 24px;
+    }
+    .chat-header {
+      padding: 20px 24px;
+      background: #f8f9fa;
+      border-bottom: 1px solid #e2e8f0;
+      font-weight: 800;
+      font-size: 18px;
+    }
+    .chat-messages {
+      height: 400px;
+      overflow-y: auto;
+      padding: 20px;
+      background: #fafbfc;
+    }
+    .message {
+      display: flex;
+      margin-bottom: 16px;
+    }
+    .message.sent {
+      justify-content: flex-end;
+    }
+    .message.received {
+      justify-content: flex-start;
+    }
+    .message-bubble {
+      max-width: 70%;
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .message.sent .message-bubble {
+      background: #b58b63;
+      color: white;
+      border-bottom-left-radius: 4px;
+    }
+    .message.received .message-bubble {
+      background: #e8e8e8;
+      color: #333;
+      border-bottom-right-radius: 4px;
+    }
+    .message-meta {
+      font-size: 10px;
+      margin-top: 4px;
+      color: #888;
+    }
+    .message.sent .message-meta {
+      text-align: right;
+    }
+    
+    /* Admin Message Box */
+    .admin-message-box {
+      background: #fff;
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .admin-message-box h3 {
+      margin-bottom: 16px;
+      color: #1a1a2e;
+    }
+    .admin-message-box textarea {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      font-family: "Tajawal", sans-serif;
+      font-size: 14px;
+      resize: vertical;
+      min-height: 100px;
+    }
+    .admin-message-box textarea:focus {
+      outline: none;
+      border-color: #b58b63;
+    }
+    
+    /* Action Buttons */
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+    .action-btn {
+      padding: 12px 28px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: "Tajawal", sans-serif;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .action-btn.resolve { background: #16a34a; color: white; }
+    .action-btn.reject { background: #dc2626; color: white; }
+    .action-btn.ban { background: #ea580c; color: white; }
+    .action-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+    
+    /* Empty Chat */
+    .empty-chat {
+      text-align: center;
+      padding: 60px;
+      color: #888;
+    }
+    
+    /* Status Badge */
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .status-badge.pending { background: #fef3c7; color: #d97706; }
+    .status-badge.resolved { background: #dcfce7; color: #16a34a; }
+    .status-badge.rejected { background: #fee2e2; color: #dc2626; }
+    
+    @media (max-width: 768px) { 
+      .dash-side { width: 100%; position: relative; height: auto; }
+      .dash-main { margin-right: 0; padding: 20px; }
+      .info-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Logout Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 28px;
+  animation: popupShow .25s ease;
+}
+
+.logout-modal-box {
+  width: 340px;
+  max-width: 85%;
+  padding: 28px 22px;
+  text-align: center;
+}
+
+.logout-modal-box h3 {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 10px;
+  color: #111827;
+}
+
+.logout-modal-box p {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.modal-confirm {
+  background: #b58b63;
+  color: #fff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.modal-confirm:hover {
+  background: #9d7550;
+}
+
+.modal-cancel {
+  background: #f3f4f6;
+  color: #111827;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.modal-cancel:hover {
+  background: #e5e7eb;
+}
+
+@keyframes popupShow {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+  </style>
+</head>
+
+<!-- Logout Confirmation Modal -->
+<div id="logoutModal" class="modal-overlay">
+  <div class="modal-content logout-modal-box">
+    <h3>تأكيد تسجيل الخروج</h3>
+    <p>هل أنت متأكد أنك تريد تسجيل الخروج؟</p>
+    <div class="modal-actions">
+      <button id="confirmLogoutBtn" class="modal-confirm">نعم، خروج</button>
+      <button id="cancelLogoutBtn" class="modal-cancel">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<body>
+
+<div class="loading-screen" id="loadingScreen">
+  <div style="text-align: center;">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">جاري التحميل...</div>
+  </div>
+</div>
+
+<div class="dash-shell" id="dashboardContent">
+  <aside class="dash-side">
+    <div>
+      <div class="dash-brand">نقطة وصل</div>
+      <nav class="dash-nav">
+        <a class="dash-link" href="admin.html">لوحة التحكم</a>
+        <a class="dash-link" href="admin-properties.html">الإعلانات</a>
+        <a class="dash-link" href="users.html">المستخدمين</a>
+        <a class="dash-link is-active" href="reports.html">البلاغات</a>
+        <a class="dash-link" href="admin-settings.html"> الإعدادات</a>
+        <a class="dash-link" href="admin-payments.html"> المدفوعات</a>
+      </nav>
+       
+    </div>
+    <div>
+      <div class="dash-sep"></div>
+      <div class="dash-bottom">
+        <button class="dash-btn dash-btn--ghost" id="logoutBtn">تسجيل الخروج</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="dash-main">
+    <div class="dash-center">
+      <div class="dash-head">
+        <div>
+          <button class="back-button" onclick="window.location.href='reports.html'">→</button>
+          <span class="dash-title">تفاصيل البلاغ</span>
+        </div>
+        <div class="head-left"><span id="adminName"></span><div class="user-avatar">أ</div></div>
+      </div>
+
+      <!-- Report Info Card -->
+      <div class="report-info" id="reportInfo">
+        <div style="text-align:center; padding:20px;">جاري تحميل البيانات...</div>
+      </div>
+
+      <!-- Chat Section -->
+      <div class="chat-section">
+        <div class="chat-header">
+          💬 المحادثة بين المستخدمين
+        </div>
+        <div class="chat-messages" id="chatMessages">
+          <div class="empty-chat">جاري تحميل المحادثة...</div>
+        </div>
+      </div>
+
+      <!-- Admin Message Box -->
+      <div class="admin-message-box">
+        <h3>✏️ رسالة للمستخدمين (اختياري)</h3>
+        <textarea id="adminMessage" placeholder="اكتب رسالة توضيحية للمستخدمين... سيتم إرسالها مع قرارك"></textarea>
+        <div style="font-size: 12px; color: #888; margin-top: 8px;">
+          💡 يمكنك كتابة سبب القرار أو أي توجيه للمستخدمين
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons" id="actionButtons"></div>
+    </div>
+  </main>
+</div>
+
+<script>
+  let currentReport = null;
+  let reportId = null;
+
+  async function checkAuth() {
+    try {
+      const response = await fetch('http://127.0.0.1:3001/api/auth/me', { credentials: 'include' });
+      if (response.ok) {
+        const user = await response.json();
+        if (user.role === 'admin') {
+          document.getElementById('loadingScreen').style.display = 'none';
+          document.getElementById('dashboardContent').style.display = 'flex';
+          document.getElementById('adminName').innerHTML = user.full_name;
+          await loadReportDetails();
+          return;
+        }
+      }
+      window.location.href = 'login.html';
+    } catch (error) {
+      window.location.href = 'login.html';
+    }
+  }
+
+  function getReportId() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("id");
+  }
+
+  function getStatusText(status) {
+    const map = {
+      'pending': 'قيد المراجعة',
+      'resolved': 'تم الحل',
+      'rejected': 'مرفوض'
+    };
+    return map[status] || status;
+  }
+
+  function getStatusClass(status) {
+    const map = {
+      'pending': 'pending',
+      'resolved': 'resolved',
+      'rejected': 'rejected'
+    };
+    return map[status] || 'pending';
+  }
+
+  function getReportTypeText(type) {
+    const types = {
+      'verbal': 'إساءة لفظية',
+      'financial': 'احتيال/ وهمي',
+      'harassment': 'مضايقة / إزعاج',
+      'threat': 'تهديد / ابتزاز',
+      'seriousness': 'عدم جديّة المشتري',
+      'other': 'أخرى'
+    };
+    return types[type] || type;
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('ar-SA') + ' ' + d.toLocaleTimeString('ar-SA');
+  }
+
+  async function loadReportDetails() {
+    reportId = getReportId();
+    if (!reportId) {
+      document.getElementById('reportInfo').innerHTML = '<div style="text-align:center; padding:40px; color:red;">خطأ: لم يتم تحديد البلاغ</div>';
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://127.0.0.1:3001/api/admin/reports/${reportId}`, {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('فشل في جلب تفاصيل البلاغ');
+      }
+      
+      currentReport = await response.json();
+      console.log("Report loaded:", currentReport);
+      
+      renderReportInfo(currentReport);
+      renderActionButtons(currentReport.status);
+      
+      if (currentReport.from_user_id && currentReport.to_user_id && currentReport.property_id) {
+        await loadChatMessages(
+          currentReport.from_user_id,
+          currentReport.to_user_id,
+          currentReport.property_id
+        );
+      } else {
+        document.getElementById('chatMessages').innerHTML = 
+          '<div class="empty-chat">لا توجد محادثة مرتبطة بهذا البلاغ</div>';
+      }
+      
+    } catch (error) {
+      console.error('Error loading report:', error);
+      document.getElementById('reportInfo').innerHTML = 
+        `<div style="text-align:center; padding:40px; color:red;">خطأ: ${error.message}</div>`;
+    }
+  }
+
+  function renderReportInfo(report) {
+    const container = document.getElementById('reportInfo');
+    container.innerHTML = `
+      <h3 style="margin-bottom: 16px;">📋 معلومات البلاغ</h3>
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-label">رقم البلاغ</div>
+          <div class="info-value">#${report.id}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">نوع البلاغ</div>
+          <div class="info-value">${getReportTypeText(report.type)}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">الحالة</div>
+          <div class="info-value">
+            <span class="status-badge ${getStatusClass(report.status)}">${getStatusText(report.status)}</span>
+          </div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">تاريخ البلاغ</div>
+          <div class="info-value">${formatDate(report.created_at)}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">المُبلِّغ</div>
+          <div class="info-value">${report.from_user_name || 'غير معروف'}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">المُبلَّغ عنه</div>
+          <div class="info-value">${report.to_user_name || 'غير معروف'}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">رقم الإعلان</div>
+          <div class="info-value">${report.ad_number || '#' + (report.property_id || '-')}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">عنوان الإعلان</div>
+          <div class="info-value">${report.property_title || '-'}</div>
+        </div>
+      </div>
+      ${report.description ? `
+        <div style="margin-top: 16px; padding: 12px; background: #fef3c7; border-radius: 12px;">
+          <div class="info-label">📝 وصف البلاغ</div>
+          <div style="margin-top: 8px;">${report.description}</div>
+        </div>
+      ` : ''}
+    `;
+  }
+
+  async function loadChatMessages(fromUserId, toUserId, propertyId) {
+    const container = document.getElementById('chatMessages');
+    container.innerHTML = '<div class="empty-chat">جاري تحميل المحادثة...</div>';
+    
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:3001/api/admin/chats/find/${fromUserId}/${toUserId}/${propertyId}`,
+        { credentials: 'include' }
+      );
+      
+      const data = await response.json();
+      console.log("Chat data:", data);
+      
+      if (!data.messages || data.messages.length === 0) {
+        container.innerHTML = '<div class="empty-chat">💬 لا توجد رسائل في هذه المحادثة</div>';
+        return;
+      }
+      
+      const adminRes = await fetch('http://127.0.0.1:3001/api/auth/me', { credentials: 'include' });
+      const admin = await adminRes.json();
+      
+      container.innerHTML = data.messages.map(msg => {
+        const isAdmin = msg.sender_id === admin.id;
+        const isFromReporter = msg.sender_id === parseInt(fromUserId);
+        const isFromReported = msg.sender_id === parseInt(toUserId);
+        
+        let senderLabel = '';
+        if (isAdmin) senderLabel = ' (المشرف)';
+        else if (isFromReporter) senderLabel = ' (المُبلِّغ)';
+        else if (isFromReported) senderLabel = ' (المُبلَّغ عنه)';
+        
+        return `
+          <div class="message ${msg.sender_id === admin.id ? 'sent' : 'received'}">
+            <div class="message-bubble">
+              <strong>${msg.sender_name || 'مستخدم'}${senderLabel}</strong>
+              <div style="margin-top: 4px;">${msg.message}</div>
+              <div class="message-meta">${formatDate(msg.created_at)}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      container.scrollTop = container.scrollHeight;
+      
+    } catch (error) {
+      console.error('Error loading chat:', error);
+      container.innerHTML = '<div class="empty-chat">❌ حدث خطأ في تحميل المحادثة</div>';
+    }
+  }
+
+  function getAdminMessage() {
+    return document.getElementById('adminMessage').value.trim();
+  }
+
+function renderActionButtons(status) {
+  const container = document.getElementById('actionButtons');
+  
+  let buttons = '';
+  
+  if (status === 'pending') {
+    buttons = `
+      <button class="action-btn resolve" id="resolveBtn">✓ قبول البلاغ وحله</button>
+      <button class="action-btn reject" id="rejectBtn">✗ رفض البلاغ</button>
+      <button class="action-btn ban" id="banUserBtn">🚫 حظر المستخدم المُبلَّغ عنه</button>
+      <button class="action-btn" id="deleteReportBtn" style="background:#D3D3D3;">🗑 حذف البلاغ</button>
+    `;
+  } else if (status === 'resolved') {
+    buttons = `
+      <button class="action-btn reject" id="rejectBtn" style="background:#dc2626;">✗ إلغاء الحل ورفض البلاغ</button>
+      <button class="action-btn ban" id="banUserBtn">🚫 حظر المستخدم المُبلَّغ عنه</button>
+      <button class="action-btn" id="deleteReportBtn" style="background:#D3D3D3;">🗑 حذف البلاغ</button>
+    `;
+  } else if (status === 'rejected') {
+    buttons = `
+      <button class="action-btn resolve" id="resolveBtn">✓ قبول البلاغ وحله</button>
+      <button class="action-btn ban" id="banUserBtn">🚫 حظر المستخدم المُبلَّغ عنه</button>
+      <button class="action-btn" id="deleteReportBtn" style="background:#D3D3D3;">🗑 حذف البلاغ</button>
+    `;
+  }
+  
+  container.innerHTML = buttons;
+  
+  document.getElementById('resolveBtn')?.addEventListener('click', resolveReport);
+  document.getElementById('rejectBtn')?.addEventListener('click', rejectReport);
+  document.getElementById('banUserBtn')?.addEventListener('click', () => banUser(currentReport?.to_user_id));
+  document.getElementById('deleteReportBtn')?.addEventListener('click', deleteReport);
+}
+
+  async function resolveReport() {
+    const adminMessage = getAdminMessage();
+    const defaultMessage = "تم قبول البلاغ وحله. شكراً لتعاونك.";
+    
+    if (!confirm(`هل أنت متأكد من قبول هذا البلاغ؟\n\nالرسالة التي ستصل للمستخدمين:\n"${adminMessage || defaultMessage}"`)) return;
+    
+    try {
+      const response = await fetch(`http://127.0.0.1:3001/api/admin/reports/${reportId}/resolve`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ admin_message: adminMessage || defaultMessage })
+      });
+      
+      if (!response.ok) throw new Error('فشل في تحديث الحالة');
+      
+      const result = await response.json();
+      alert(result.message || '✅ تم قبول البلاغ وإرسال إشعار للمستخدمين');
+      
+      // Clear message box
+      document.getElementById('adminMessage').value = '';
+      
+      await loadReportDetails();
+      
+    } catch (error) {
+      console.error('Error resolving report:', error);
+      alert('فشل في تحديث حالة البلاغ');
+    }
+  }
+
+  async function rejectReport() {
+    const adminMessage = getAdminMessage();
+    const defaultMessage = "تم رفض البلاغ لعدم وجود مخالفة. نشكرك على اهتمامك.";
+    
+    if (!confirm(`هل أنت متأكد من رفض هذا البلاغ؟\n\nالرسالة التي ستصل للمستخدمين:\n"${adminMessage || defaultMessage}"`)) return;
+    
+    try {
+      const response = await fetch(`http://127.0.0.1:3001/api/admin/reports/${reportId}/reject`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ admin_message: adminMessage || defaultMessage })
+      });
+      
+      if (!response.ok) throw new Error('فشل في تحديث الحالة');
+      
+      const result = await response.json();
+      alert(result.message || '✅ تم رفض البلاغ وإرسال إشعار للمستخدمين');
+      
+      document.getElementById('adminMessage').value = '';
+      await loadReportDetails();
+      
+    } catch (error) {
+      console.error('Error rejecting report:', error);
+      alert('فشل في تحديث حالة البلاغ');
+    }
+  }
+
+  async function banUser(userId) {
+    if (!userId) {
+      alert('لا يوجد مستخدم للحظر');
+      return;
+    }
+    
+    const adminMessage = getAdminMessage();
+    const defaultMessage = "تم حظر حسابك لمخالفة قواعد المنصة. للاستفسار يرجى التواصل مع الدعم الفني.";
+    
+    if (!confirm(`⚠️ تحذير: حظر المستخدم سيوقف جميع إعلاناته.\n\nالرسالة التي ستصل للمستخدم:\n"${adminMessage || defaultMessage}"\n\nهل أنت متأكد؟`)) return;
+    
+    try {
+      const response = await fetch(`http://127.0.0.1:3001/api/admin/users/${userId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          status: 'blocked',
+          admin_message: adminMessage || defaultMessage,
+          report_id: reportId
+        })
+      });
+      
+      if (!response.ok) throw new Error('فشل في حظر المستخدم');
+      
+      const result = await response.json();
+      alert(result.message || '✅ تم حظر المستخدم وإرسال إشعار له');
+      
+      document.getElementById('adminMessage').value = '';
+      await loadReportDetails();
+      
+    } catch (error) {
+      console.error('Error banning user:', error);
+      alert('فشل في حظر المستخدم');
+    }
+  }
+
+  async function deleteReport() {
+  if (!confirm('⚠️ هل أنت متأكد من حذف هذا البلاغ؟ لا يمكن التراجع عن هذا الإجراء.')) {
+    return;
+  }
+  
+  try {
+    const response = await fetch(`http://127.0.0.1:3001/api/admin/reports/${reportId}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'فشل في حذف البلاغ');
+    }
+    
+    alert('✅ تم حذف البلاغ بنجاح');
+    window.location.href = 'reports.html'; // Go back to reports list
+    
+  } catch (error) {
+    console.error('Error deleting report:', error);
+    alert('❌ فشل في حذف البلاغ: ' + error.message);
+  }
+}
+
+async function setupLogout() {
+  const logoutBtn = document.getElementById('logoutBtn');
+  const logoutModal = document.getElementById('logoutModal');
+  const confirmBtn = document.getElementById('confirmLogoutBtn');
+  const cancelBtn = document.getElementById('cancelLogoutBtn');
+
+  if (!logoutBtn || !logoutModal) return;
+
+  // Open modal when logout button is clicked
+  logoutBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    logoutModal.style.display = 'flex';
+  });
+
+  // Close modal when cancel is clicked
+  cancelBtn.addEventListener('click', () => {
+    logoutModal.style.display = 'none';
+  });
+
+  // Close modal when clicking outside
+  logoutModal.addEventListener('click', (e) => {
+    if (e.target === logoutModal) {
+      logoutModal.style.display = 'none';
+    }
+  });
+
+  // Confirm logout
+  confirmBtn.addEventListener('click', async () => {
+    await fetch('http://127.0.0.1:3001/api/auth/logout', { 
+      method: 'POST', 
+      credentials: 'include' 
+    });
+    localStorage.removeItem('user');
+    window.location.href = 'login.html';
+  });
+}
+
+  document.addEventListener('DOMContentLoaded', () => {
+    checkAuth();
+    setupLogout();
+  });
+</script>
+
+</body>
+</html>

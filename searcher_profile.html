@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>الملف الشخصي - الباحث | نقطة وصل</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="Style.css" />
+</head>
+
+<!-- ===== Logout Modal ===== -->
+<div id="logoutModal" class="modal">
+  <div class="modal-box">
+    <h3>تأكيد تسجيل الخروج</h3>
+    <p>هل أنت متأكد أنك تريد تسجيل الخروج؟</p>
+
+    <div class="modal-actions">
+      <button id="confirmLogout" class="profile-save">نعم، خروج</button>
+      <button id="cancelLogout" class="profile-cancel">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<body class="dash-page">
+
+  <div class="dash-shell">
+
+    <aside class="dash-side">
+    <div>
+      <div class="dash-brand">نقطة وصل</div>
+      <div class="user-box">
+        <i class="fa fa-user user-icon"></i>
+        <span id="userName"></span>
+      </div>
+  </div>
+
+      <nav class="dash-nav">
+        <a class="dash-link is-active" href="#">ملف البيانات الشخصية</a>
+        <a class="dash-link" href="favorites.html">العقارات المفضلة</a>
+        <a class="dash-link" href="chat_searcher.html">المحادثات</a>
+      </nav>
+
+      <div class="dash-sep"></div>
+
+      <div class="dash-bottom">
+        <button class="dash-btn dash-btn--ghost" type="button" onclick="window.location.href='index.html'">الذهاب لصفحة الرئيسية</button>
+        <button class="dash-btn dash-btn--ghost" type="button" id="logoutBtn">تسجيل الخروج</button>
+      </div>
+    </aside>
+
+    <main class="dash-main">
+      <div class="dash-center">
+      <div class="dash-head">
+        <h1 class="dash-title">البيانات الشخصية</h1>
+      </div>
+
+      <div class="profile-card">
+        <form id="profileForm">
+          <div class="profile-field">
+            <label class="profile-label" for="full_name">الاسم الكامل</label>
+            <input class="profile-input" id="full_name" disabled>
+          </div>
+
+          <div class="profile-field">
+            <label class="profile-label" for="national_id">رقم الهوية الوطنية</label>
+            <input class="profile-input" id="national_id" disabled>
+          </div>
+
+          <div class="profile-field">
+            <label class="profile-label" for="phone">رقم الجوال</label>
+            <input class="profile-input" id="phone" disabled>
+          </div>
+
+          <div class="profile-field">
+            <label class="profile-label" for="email">البريد الإلكتروني</label>
+            <input class="profile-input" id="email" disabled>
+          </div>
+
+          <div class="profile-actions">
+            <button class="profile-edit" type="button" id="editBtn">تعديل</button>
+            <button class="profile-save" type="button" id="saveBtn" style="display:none;">حفظ</button>
+            <button class="profile-cancel" type="button" id="cancelBtn" style="display:none;">إلغاء</button>
+          </div>
+
+          <p class="profile-msg" id="msg"></p>
+        </form>
+      </div>
+      </div>
+    </main>
+
+  </div>
+
+<script>
+const msg = document.getElementById("msg");
+const fullNameEl = document.getElementById("full_name");
+const nationalEl = document.getElementById("national_id");
+const phoneEl = document.getElementById("phone");
+const emailEl = document.getElementById("email");
+
+// Display user name in the sidebar
+const userNameSpan = document.getElementById("userName");
+const user = JSON.parse(localStorage.getItem("user") || "null");
+if (userNameSpan && user) {
+
+  let roleText = "";
+
+  if (user.role === "owner") {
+    roleText = " (مالك)";
+  } 
+  else if (user.role === "searcher") {
+    roleText = " (باحث)";
+  } 
+  else if (user.role === "admin") {
+    roleText = " (مدير النظام)";
+  }
+
+  userNameSpan.textContent = user.full_name + roleText;
+}
+
+function setMsg(text, ok=false){
+  msg.textContent = text || "";
+  msg.style.color = ok ? "#0a7a2f" : "#b00020";
+  if (ok) {
+    setTimeout(() => { msg.style.opacity = "0"; }, 2500);
+    setTimeout(() => { msg.textContent = ""; msg.style.opacity = "1"; }, 3000);
+  }
+}
+
+async function loadProfile(){
+  const user = JSON.parse(localStorage.getItem("user") || "null");
+  if (!user?.id){
+    setMsg("لا يوجد مستخدم مسجل دخول");
+    return;
+  }
+
+  try{
+    const r = await fetch(`http://127.0.0.1:3001/api/users/${user.id}`);
+    const j = await r.json();
+    if(!r.ok) throw new Error(j.message);
+
+    fullNameEl.value = j.full_name || "";
+    nationalEl.value = j.national_id || "";
+    phoneEl.value = j.phone || "";
+    emailEl.value = j.email || "";
+
+    localStorage.setItem("user", JSON.stringify(j));
+  }catch(e){
+    setMsg(e.message);
+  }
+}
+
+async function saveProfile(){
+  const user = JSON.parse(localStorage.getItem("user") || "null");
+
+  try{
+    const payload = {
+      full_name: fullNameEl.value.trim(),
+      email: emailEl.value.trim()
+    };
+
+    const r = await fetch(`http://127.0.0.1:3001/api/users/${user.id}`, {
+      method: "PUT",
+      headers: { "Content-Type":"application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const j = await r.json();
+    if(!r.ok) throw new Error(j.message);
+
+    localStorage.setItem("user", JSON.stringify(j.user));
+    setMsg("تم حفظ البيانات", true);
+
+  }catch(e){
+    setMsg(e.message);
+  }
+}
+
+// ================= UI Logic =================
+loadProfile();
+
+const editBtn = document.getElementById("editBtn");
+const saveBtn = document.getElementById("saveBtn");
+const cancelBtn = document.getElementById("cancelBtn");
+
+let originalData = {};
+
+editBtn.onclick = () => {
+  originalData = {
+    full_name: fullNameEl.value,
+    email: emailEl.value,
+   
+  };
+
+  fullNameEl.disabled = false;
+  emailEl.disabled = false;
+  nationalEl.disabled = true;
+phoneEl.disabled = true;
+
+ 
+
+  editBtn.style.display = "none";
+  saveBtn.style.display = "inline-block";
+  cancelBtn.style.display = "inline-block";
+};
+
+cancelBtn.onclick = () => {
+  fullNameEl.value = originalData.full_name;
+  emailEl.value = originalData.email;
+  
+
+  fullNameEl.disabled = true;
+  emailEl.disabled = true;
+   nationalEl.disabled = true;
+phoneEl.disabled = true;
+  
+
+  editBtn.style.display = "inline-block";
+  saveBtn.style.display = "none";
+  cancelBtn.style.display = "none";
+};
+
+saveBtn.onclick = async () => {
+  if (!fullNameEl.value.trim()) {
+    setMsg("الاسم الكامل مطلوب");
+    return;
+  }
+
+ 
+
+  if (emailEl.value.trim()) {
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(emailEl.value.trim())) {
+      setMsg("البريد الإلكتروني غير صحيح");
+      return;
+    }
+  }
+
+  await saveProfile();
+
+  fullNameEl.disabled = true;
+  emailEl.disabled = true;
+  nationalEl.disabled = true;
+phoneEl.disabled = true;
+  
+
+  editBtn.style.display = "inline-block";
+  saveBtn.style.display = "none";
+  cancelBtn.style.display = "none";
+};
+
+// ================= Logout Modal =================
+const logoutBtn = document.getElementById("logoutBtn");
+const modal = document.getElementById("logoutModal");
+const confirmLogout = document.getElementById("confirmLogout");
+const cancelLogout = document.getElementById("cancelLogout");
+
+logoutBtn.onclick = () => {
+  modal.style.display = "flex";
+};
+
+cancelLogout.onclick = () => {
+  modal.style.display = "none";
+};
+
+confirmLogout.onclick = () => {
+  localStorage.removeItem("user");
+  window.location.href = "index.html";
+};
+
+window.onclick = (e) => {
+  if (e.target === modal) {
+    modal.style.display = "none";
+  }
+};
+</script>
+</body>
+
+<!-- security -->
+<script src="backend/guard.js"></script>
+
+</html>

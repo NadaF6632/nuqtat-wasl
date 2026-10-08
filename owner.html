@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <!-- ================= BASIC SETTINGS ================= -->
+
+  <!-- Character encoding (supports Arabic) -->
+  <meta charset="utf-8" />
+
+  <!-- Responsive design for mobile devices -->
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Page title -->
+  <title>نقطة وصل - مالك عقار</title>
+
+  <!-- ================= FONTS ================= -->
+
+  <!-- Google Font (Tajawal for Arabic UI) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+
+  <!-- ================= STYLES ================= -->
+
+  <!-- External CSS file -->
+  <link rel="stylesheet" href="Style.css" />
+</head>
+
+<body>
+
+  <!-- ================= HERO / HEADER SECTION ================= -->
+  <header class="hero hero--owner">
+
+    <!-- Overlay layer (for styling effect on background) -->
+    <div class="hero__overlay"></div>
+
+    <div class="wrap hero__wrap">
+
+      <!-- ================= TOP NAVIGATION ================= -->
+      <div class="hero__top">
+
+        <!-- Website logo / brand -->
+        <div class="brand">نقطة وصل</div>
+
+        <!-- Navigation links -->
+        <nav class="nav-pill">
+          <a href="#contact">تواصل معنا</a>
+          <a href="#how">كيف نعمل</a>
+          <a href="#features">مزايانا</a>
+        </nav>
+
+        <!-- Login button -->
+      <!-- Login button / User area with notification bell -->
+      <div style="display: flex; align-items: center; gap: 8px;">
+      <a class="btn-login" href="Login.html" id="loginBtn">تسجيل الدخول</a>
+        
+        <!-- Notification Bell -->
+        <div class="notification-container" id="notificationContainer" style="display: none;">
+          <div class="notification-bell" id="notificationBell">
+            🔔
+            <span class="notification-badge" id="notificationBadge"></span>
+          </div>
+          <div class="notification-dropdown" id="notificationDropdown">
+            <div class="notification-header">📢 الإشعارات</div>
+            <div class="notification-list" id="notificationList"></div>
+          </div>
+        </div>
+      </div>
+   </div>
+
+
+
+      <!-- ================= HERO CONTENT ================= -->
+      <div class="hero__content hero__content--right">
+
+        <!-- Mode switch (Owner / Searcher) -->
+        <div class="mode-pill">
+          <!-- Active page = Owner -->
+          <a class="mode-pill__btn is-active" href="owner.html">مالك</a>
+
+          <!-- Switch to Searcher page -->
+          <a class="mode-pill__btn" href="index.html">باحث</a>
+        </div>
+
+        <!-- Main title -->
+        <h1 class="hero-title-right">اعرض عقاراتك</h1>
+
+        <!-- Description -->
+        <p class="hero-p-right">
+          نساعدك تعرض عقاراتك مباشرة — بدون تعقيد..
+        </p>
+
+        <!-- Call to action button -->
+        <a class="btn-join" href="Login.html" id="joinBtn">انضم إلينا</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <main>
+
+    <!-- ================= FEATURES SECTION ================= -->
+    <section id="features" class="section">
+      <div class="wrap">
+
+        <!-- Section title -->
+        <div class="tiny-title">مزايانا</div>
+        <h2 class="title">لماذا نقطة وصل؟</h2>
+
+        <!-- Description -->
+        <p class="sub">
+          نربطك مباشرة بالباحثين عن العقار، ونوفر لك تجربة إدارة بسيطة وموثوقة
+        </p>
+
+        <!-- Feature cards -->
+        <div class="features">
+
+          <!-- Feature 1 -->
+          <article class="feat">
+            <div class="feat__icon">✓</div>
+            <h3>تجربة سهلة</h3>
+            <p>واجهة منظمة تساعدك على إدخال عقارك بسرعة.</p>
+          </article>
+
+          <!-- Feature 2 -->
+          <article class="feat">
+            <div class="feat__icon">⌕</div>
+            <h3>مراجعة المحتوى</h3>
+            <p>التأكد من جودة الإعلانات قبل النشر.</p>
+          </article>
+
+          <!-- Feature 3 -->
+          <article class="feat">
+            <div class="feat__icon">✦</div>
+            <h3>منصة موثوقة</h3>
+            <p>ربط مباشر بدون وسيط.</p>
+          </article>
+
+          <!-- Feature 4 -->
+          <article class="feat">
+            <div class="feat__icon">↗</div>
+            <h3>إدارة سهلة</h3>
+            <p>تحكم كامل في الإعلانات.</p>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= HOW IT WORKS SECTION ================= -->
+    <section id="how" class="section section--tight">
+      <div class="wrap">
+
+        <!-- Section title -->
+        <h2 class="title title--right">كيف نعمل</h2>
+
+        <!-- Description -->
+        <p class="sub sub--right">
+          خطوات منظمة لإدارة عقاراتك بسهولة
+        </p>
+
+        <!-- Steps -->
+        <div class="steps">
+
+          <div class="step">
+            <div class="step__num">01</div>
+            <div class="step__text">إنشاء حساب موثق بالهوية الوطنية ورقم الجوال لضمان مصداقية المستخدم</div>
+          </div>
+
+          <div class="step">
+            <div class="step__num">02</div>
+            <div class="step__text">إضافة العقار عبر تعبئة جميع البيانات الأساسية (الموقع، المساحة، السعر، الصور، الفيديو)</div>
+          </div>
+
+          <div class="step">
+            <div class="step__num">03</div>
+            <div class="step__text">مراجعة الإعلان من قبل إدارة المنصة للتأكد من الجودة والالتزام بالمعايير</div>
+          </div>
+
+          <div class="step">
+            <div class="step__num">04</div>
+            <div class="step__text">نشر العقار بعد الموافقة ليظهر للمستخدمين في نتائج البحث</div>
+          </div>
+
+          <div class="step">
+            <div class="step__num">05</div>
+            <div class="step__text">استقبال الرسائل المباشرة من المهتمين وإدارة عملية التواصل دون وسيط</div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  </main>
+
+
+
+
+
+<!-- ====================== footer =================================== -->
+<footer class="footer">
+
+  <div class="footer-container">
+
+    <!-- RIGHT SIDE -->
+    <div class="footer-right">
+      <h2 class="footer-logo">نقطة وصل</h2>
+      <p class="footer-desc">
+        منصة رقمية لعرض العقارات تربط المالك والباحث مباشرة دون وسطاء،
+        وتوفر تجربة موثوقة قائمة على التحقق، الشفافية، وجودة المحتوى.
+      </p>
+    </div>
+
+    <!-- LEFT SIDE -->
+    <div class="footer-left">
+
+      <!-- COLUMN 1 -->
+      <div class="footer-col">
+        <h4>الدعم</h4>
+        <a href="mailto:nuqtatwasl.2026@outlook.com">تواصل معنا</a>
+        <a href="#">الاسئلة الشائعة</a>
+        <a href="#">الشروط والاحكام</a>
+      </div>
+
+      <!-- COLUMN 2 -->
+      <div class="footer-col">
+        <h4>روابط سريعة</h4>
+        <a href="index.html">الرئيسية</a>
+        <a href="map.html">الخريطة</a>
+        <a href="#" id="accountLink">الحساب</a>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- BOTTOM -->
+  <div class="footer-bottom">
+    © 2026 Qassim - نقطة وصل
+  </div>
+
+</footer>
+
+</body>
+<script>
+const loginBtn = document.getElementById("loginBtn");
+const user = JSON.parse(localStorage.getItem("user") || "null");
+
+if (loginBtn && user) {
+  let roleText = "";
+  let profilePage = "searcher_profile.html";
+
+  if (user.role === "owner") {
+    roleText = "مالك";
+    profilePage = "owner_profile.html";
+  } else if (user.role === "searcher") {
+    roleText = "باحث";
+    profilePage = "searcher_profile.html";
+  } else if (user.role === "admin") {
+    roleText = "مدير النظام";
+    profilePage = "admin.html";
+  }
+
+  loginBtn.innerHTML =
+    "<span dir='ltr'>(" + roleText + ")</span> " + user.full_name;
+
+  loginBtn.href = profilePage;
+}
+</script>
+
+<script src="/backend/notification.js"></script>
+
+<!-- Authentication step -->
+<script src="backend/auth.js"></script>
+
+<!-- security -->
+<script src="backend/guard.js"></script>
+
+</html>

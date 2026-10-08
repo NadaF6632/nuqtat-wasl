@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>المحادثات - الباحث | نقطة وصل</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="Style.css" />
+</head>
+
+<!-- ===== Logout Modal ===== -->
+<div id="logoutModal" class="modal">
+  <div class="modal-box">
+    <h3>تأكيد تسجيل الخروج</h3>
+    <p>هل أنت متأكد أنك تريد تسجيل الخروج؟</p>
+
+    <div class="modal-actions">
+      <button id="confirmLogout" class="profile-save">نعم، خروج</button>
+      <button id="cancelLogout" class="profile-cancel">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<body class="dash-page">
+
+  <div class="dash-shell">
+
+    <aside class="dash-side">
+        <div>
+      <div class="dash-brand">نقطة وصل</div>
+      <div class="user-box">
+        <i class="fa fa-user user-icon"></i>
+        <span id="userName"></span>
+      </div>
+      </div>
+
+      <nav class="dash-nav">
+        <a class="dash-link" href="searcher_profile.html">ملف البيانات الشخصية</a>
+        <a class="dash-link" href="favorites.html">العقارات المفضلة</a>
+        <a class="dash-link is-active" href="#">المحادثات</a>
+      </nav>
+
+      <div class="dash-sep"></div>
+
+      <div class="dash-bottom">
+        <button class="dash-btn dash-btn--ghost" type="button" onclick="window.location.href='index.html'">الذهاب لصفحة الرئيسية</button>
+        <button class="dash-btn dash-btn--ghost" type="button" id="logoutBtn">تسجيل الخروج</button>
+      </div>
+    </aside>
+
+<main class="dash-main" style="padding:0; display:block;">
+      <div style="display:flex; height:100vh;">
+        
+        <!-- Conversations List -->
+        <div style="width:380px; border-left:1px solid #eee; overflow-y:auto; background:#fff;" id="chatList">
+          <div style="padding:20px; border-bottom:1px solid #eee; font-weight:800; font-size:20px; color:#111827;">المحادثات</div>
+          <div style="text-align:center; padding:40px; color:#aaa;">جاري التحميل...</div>
+        </div>
+
+        <!-- Chat Window -->
+        <div style="flex:1; display:flex; flex-direction:column; background:#fff;" id="chatWindow">
+          <div style="flex:1; display:flex; align-items:center; justify-content:center; color:#aaa; font-size:18px;">اختر محادثة للبدء</div>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+<script>
+// Display user name in the sidebar
+const userNameSpan = document.getElementById("userName");
+const user = JSON.parse(localStorage.getItem("user") || "null");
+
+if (userNameSpan && user) {
+
+  let roleText = "";
+
+  if (user.role === "owner") {
+    roleText = " (مالك)";
+  } 
+  else if (user.role === "searcher") {
+    roleText = " (باحث)";
+  } 
+  else if (user.role === "admin") {
+    roleText = " (مدير النظام)";
+  }
+
+  userNameSpan.textContent = user.full_name + roleText;
+}
+let currentConvId = null;
+let refreshInterval = null;
+
+if (!user?.id || user.role !== "searcher") {
+  window.location.href = "Login.html";
+}
+
+// Check if coming from property page
+const urlParams = new URLSearchParams(window.location.search);
+const startPropertyId = urlParams.get("property_id");
+
+async function startChatFromProperty(propertyId) {
+  try {
+    console.log("Starting chat for property:", propertyId);
+    
+    const res = await fetch("http://127.0.0.1:3001/api/chat/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ property_id: parseInt(propertyId) })
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.message || "Failed to start chat");
+    }
+    
+    console.log("Chat started:", data);
+    
+    // Get property details
+    const propRes = await fetch(`http://127.0.0.1:3001/api/properties/${propertyId}`);
+    const prop = await propRes.json();
+    
+    // Get owner info
+    let ownerName = "المالك";
+    try {
+      const ownerRes = await fetch(`http://127.0.0.1:3001/api/properties/${propertyId}/owner`);
+      if (ownerRes.ok) {
+        const owner = await ownerRes.json();
+        ownerName = owner.full_name || "المالك";
+      }
+    } catch(e) {}
+    
+    console.log("Opening chat with:", ownerName, prop.title);
+    openChat(data.conversationId, prop.title || "عقار", ownerName);
+    
+ 
+    
+    // Reload conversation list after delay
+    setTimeout(() => {
+    if (currentConvId) loadConversations();
+    }, 1000);
+
+    } catch (err) {
+    console.error("Start chat error:", err);
+    // Only show alert if it's a real error, not just "already exists"
+    if (err.message && !err.message.includes("duplicate") && !err.message.includes("موجود")) {
+      alert("فشل في بدء المحادثة: " + err.message);
+    }
+    loadConversations();
+  }
+}
+
+async function loadConversations() {
+  try {
+    const res = await fetch("http://127.0.0.1:3001/api/chat/conversations", { credentials: "include" });
+    
+    if (!res.ok) {
+      console.error("Failed to load conversations:", res.status);
+      return;
+    }
+    
+    const convs = await res.json();
+    const container = document.getElementById("chatList");
+    
+    container.innerHTML = '<div style="padding:20px; border-bottom:1px solid #eee; font-weight:800; font-size:20px; color:#111827;">المحادثات</div>';
+    
+    if (!convs || convs.length === 0) {
+      container.innerHTML += '<div style="text-align:center; padding:40px; color:#aaa;">لا توجد محادثات بعد</div>';
+      return;
+    }
+
+    for (const c of convs) {
+      let photoUrl = null;
+      try {
+        const photoRes = await fetch(`http://127.0.0.1:3001/api/properties/${c.property_id}/photos`);
+        const photos = await photoRes.json();
+        if (photos && photos.length > 0) {
+          photoUrl = `http://127.0.0.1:3001${photos[0].photo_path}`;
+        }
+      } catch (err) {}
+
+      const initials = (c.owner_name || "م")[0];
+      
+      container.innerHTML += `
+        <div onclick="openChat(${c.id}, '${(c.property_title || '').replace(/'/g, "\\'")}', '${(c.owner_name || '').replace(/'/g, "\\'")}')" 
+             style="display:flex; gap:14px; padding:16px 20px; cursor:pointer; border-bottom:1px solid #f0f0f0; transition:0.2s;" 
+             data-conv-id="${c.id}"
+             onmouseover="this.style.background='#fafafa'" onmouseout="if(!this.classList.contains('active-chat')) this.style.background=''">
+          <div style="width:55px; height:55px; border-radius:12px; overflow:hidden; flex-shrink:0; background:#f0ebe6;">
+            ${photoUrl ? `<img src="${photoUrl}" style="width:100%; height:100%; object-fit:cover;" onerror="this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;color:#c9a57b;\\'>${initials}</div>'">` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;color:#c9a57b;">${initials}</div>`}
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="font-weight:700; font-size:14px; color:#111827;">${c.property_title || 'عقار'}</div>
+            <div style="font-size:13px; color:#c9a57b; margin-top:2px;">المالك ${c.owner_name || 'غير معروف'}</div>
+            <div style="font-size:12px; color:#aaa; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${c.last_message || 'لا توجد رسائل'}</div>
+          </div>
+          ${c.last_message_time ? `<div style="font-size:11px; color:#bbb; flex-shrink:0;">${new Date(c.last_message_time).toLocaleDateString('ar-SA')}</div>` : ''}
+        </div>
+      `;
+    }
+  } catch (err) { console.error(err); }
+}
+
+function openChat(convId, propertyTitle, partnerName) {
+  currentConvId = convId;
+  
+  document.querySelectorAll('#chatList [data-conv-id]').forEach(el => {
+    el.style.background = '';
+    el.classList.remove('active-chat');
+    el.style.borderRight = '';
+  });
+  const activeEl = document.querySelector(`[data-conv-id="${convId}"]`);
+  if (activeEl) {
+    activeEl.style.background = 'rgba(181,139,99,.08)';
+    activeEl.style.borderRight = '3px solid #c9a57b';
+    activeEl.classList.add('active-chat');
+  }
+
+  // In chat_searcher.html, find the openChat function
+// Replace the chat window HTML with this:
+
+document.getElementById("chatWindow").innerHTML = `
+  <div style="padding:20px 24px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; align-items:center; gap:14px;">
+      <div style="width:48px; height:48px; background:#c9a57b; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:18px;">${(partnerName || "م")[0]}</div>
+      <div>
+        <div style="font-weight:800; font-size:16px;">المالك ${partnerName}</div>
+        <div style="font-size:13px; color:#888;">${propertyTitle}</div>
+      </div>
+    </div>
+    <div style="display:flex; gap:10px;">
+      
+      <button onclick="reportUser()" style="background:rgba(185,28,28,.08); color:#b91c1c; padding:8px 16px; border-radius:10px; font-size:13px; font-weight:800; cursor:pointer; border:none; font-family:inherit;">الإبلاغ عن المستخدم</button>
+    </div>
+  </div>
+  
+  <!-- ADD NOTIFICATIONS DROPDOWN HERE -->
+  <div id="notificationsDropdown" style="display:none; position:absolute; top:80px; left:20px; width:320px; background:white; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.15); z-index:1000; max-height:400px; overflow-y:auto;">
+    <div style="padding:12px; border-bottom:1px solid #eee; font-weight:bold;">📢 الإشعارات</div>
+    <div id="notificationsList" style="max-height:350px; overflow-y:auto;"></div>
+  </div>
+  
+  <div style="flex:1; padding:24px; overflow-y:auto; background:#f9fafb;" id="chatMsgs">
+    <div style="text-align:center; color:#aaa;">جاري التحميل...</div>
+  </div>
+  <div style="padding:18px 24px; border-top:1px solid #eee; display:flex; gap:12px; background:#fff;">
+    <input type="text" id="msgInput" placeholder="اكتب رسالتك..." style="flex:1; padding:14px; border-radius:12px; border:1px solid #e0e0e0; font-family:inherit; font-size:15px; outline:none;" onkeypress="if(event.key==='Enter')sendMsg()">
+    <button onclick="sendMsg()" style="padding:14px 28px; border:none; border-radius:12px; background:#c9a57b; color:#fff; font-weight:700; cursor:pointer; font-family:inherit; font-size:15px;">إرسال</button>
+  </div>
+`;
+
+  loadMessages();
+  if (refreshInterval) clearInterval(refreshInterval);
+  refreshInterval = setInterval(loadMessages, 2000);
+}
+
+async function loadMessages() {
+  if (!currentConvId) return;
+  try {
+    const res = await fetch(`http://127.0.0.1:3001/api/chat/messages/${currentConvId}`, { credentials: "include" });
+    const msgs = await res.json();
+    const container = document.getElementById("chatMsgs");
+    if (!container) return;
+
+    if (!msgs || msgs.length === 0) {
+      container.innerHTML = '<div style="text-align:center; color:#aaa; padding:40px;">لا توجد رسائل. ابدأ المحادثة!</div>';
+      return;
+    }
+
+    container.innerHTML = msgs.map(m => `
+      <div style="display:flex; margin-bottom:16px; ${m.sender_id === user.id ? 'justify-content:flex-end;' : 'justify-content:flex-start;'}">
+        ${m.sender_id !== user.id ? `<div style="width:36px; height:36px; background:#c9a57b; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:14px; margin-left:10px; flex-shrink:0;">${(m.sender_name || "?")[0]}</div>` : ''}
+        <div style="max-width:65%; padding:12px 16px; border-radius:16px; font-size:14px; line-height:1.6; ${m.sender_id === user.id ? 'background:#c9a57b; color:#fff; border-bottom-left-radius:4px;' : 'background:#e8e8e8; color:#333; border-bottom-right-radius:4px;'}">${m.message}</div>
+        ${m.sender_id === user.id ? `<div style="width:36px; height:36px; background:#c9a57b; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:14px; margin-right:10px; flex-shrink:0;">${(user.full_name || "?")[0]}</div>` : ''}
+      </div>
+    `).join('');
+    container.scrollTop = container.scrollHeight;
+  } catch (err) { console.error(err); }
+}
+
+async function sendMsg() {
+  const input = document.getElementById("msgInput");
+  if (!input || !input.value.trim()) return;
+  
+  try {
+    await fetch("http://127.0.0.1:3001/api/chat/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ conversation_id: currentConvId, message: input.value.trim() })
+    });
+    input.value = "";
+    await loadMessages();
+    loadConversations();
+  } catch (err) { console.error(err); }
+}
+
+// report btn 
+async function reportUser() {
+  if (!currentConvId) return;
+  
+  // Get partner info
+  const res = await fetch(`http://127.0.0.1:3001/api/chat/conversations`, { credentials: "include" });
+  const convs = await res.json();
+  const currentConv = convs.find(c => c.id === currentConvId);
+  
+  if (!currentConv) return;
+  
+  const toUserId = currentConv.owner_id;
+  const propertyId = currentConv.property_id;
+
+  // Create a report modal
+  const modalHTML = `
+    <div id="reportModal" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:9999;">
+      <div style="background:#fff; border-radius:16px; padding:28px; width:500px; max-width:90%;">
+        <h3 style="margin-bottom:16px; text-align:center;">الإبلاغ عن ${currentConv.owner_name || 'المالك'}</h3>
+        
+        <div style="margin-bottom:14px;">
+          <label style="font-weight:700; margin-bottom:8px; display:block;">نوع البلاغ</label>
+          <select id="reportType" style="width:100%; padding:12px; border-radius:10px; border:1px solid #ddd; font-family:inherit;">
+            <option value="verbal">إساءة لفظية</option>
+            <option value="financial"> إحتيال/ وهمي</option>
+            <option value="harassment">مضايقة / إزعاج</option>
+            <option value="threat">تهديد / ابتزاز</option>
+            <option value="other">أخرى</option>
+          </select>
+        </div>
+        
+        <div style="margin-bottom:14px;">
+          <label style="font-weight:700; margin-bottom:8px; display:block;">الوصف (اختياري)</label>
+          <textarea id="reportDesc" rows="4" placeholder="اكتب وصفاً للمشكلة..." style="width:100%; padding:12px; border-radius:10px; border:1px solid #ddd; font-family:inherit; resize:vertical;"></textarea>
+        </div>
+        
+        <div style="display:flex; gap:12px; justify-content:center;">
+          <button onclick="closeReportModal()" style="padding:10px 24px; border-radius:10px; border:none; background:#e2e8f0; cursor:pointer; font-family:inherit; font-weight:700;">إلغاء</button>
+          <button onclick="submitReport(${toUserId}, ${propertyId})" style="padding:10px 24px; border-radius:10px; border:none; background:#dc2626; color:#fff; cursor:pointer; font-family:inherit; font-weight:700;">إرسال البلاغ</button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+function closeReportModal() {
+  const modal = document.getElementById('reportModal');
+  if (modal) modal.remove();
+}
+
+async function submitReport(toUserId, propertyId) {
+  const type = document.getElementById('reportType').value;
+  const description = document.getElementById('reportDesc').value;
+  
+  try {
+    const res = await fetch("http://127.0.0.1:3001/api/reports", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ type, description, to_user_id: toUserId, property_id: propertyId })
+    });
+    
+    const data = await res.json();
+    
+    if (res.ok) {
+      alert("✅ تم إرسال البلاغ بنجاح. ستقوم الإدارة بمراجعته.");
+      closeReportModal();
+    } else {
+      alert(data.message || "فشل في إرسال البلاغ");
+    }
+  } catch (err) {
+    alert("حدث خطأ");
+  }
+}
+
+// ================= Logout Modal =================
+const logoutBtn = document.getElementById("logoutBtn");
+const modal = document.getElementById("logoutModal");
+const confirmLogout = document.getElementById("confirmLogout");
+const cancelLogout = document.getElementById("cancelLogout");
+
+logoutBtn.onclick = () => { modal.style.display = "flex"; };
+cancelLogout.onclick = () => { modal.style.display = "none"; };
+confirmLogout.onclick = () => {
+  localStorage.removeItem("user");
+  window.location.href = "index.html";
+};
+window.onclick = (e) => {
+  if (e.target === modal) { modal.style.display = "none"; }
+};
+
+// ===== STARTUP =====
+if (startPropertyId) {
+  // Remove property_id from URL immediately to prevent refresh issues
+  window.history.replaceState({}, document.title, window.location.pathname);
+  
+  startChatFromProperty(startPropertyId);
+} else {
+  loadConversations();
+}
+
+</script>
+
+</body>
+</html>

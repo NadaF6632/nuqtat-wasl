@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>تفاصيل العقار</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<style>
+
+/* ===== LAYOUT ===== */
+.property-container{
+  width: 95%;
+  max-width: 1300px;
+  margin: auto;
+}
+
+.property-details{
+  margin-top: 10px;
+  padding-top: 0;
+}
+
+:root{
+  --media-height: 540px;
+  font-family:system-ui; /* "Tajawal", system-ui, -apple-system, Segoe UI, Arial, sans-serif */
+  --sand: #b58b63;
+  --sand-2: #c9ad8e;
+  --sand-3: #c9a57b;
+}
+
+/* ===== nav style ===== */
+
+.nav{
+  display: flex;
+  gap: 20px;
+}
+
+.nav a{
+  text-decoration: none;
+  color: #333;
+  font-size: 16px;
+  font-weight: 500;
+
+  padding: 6px 10px;
+  border-radius: 8px;
+
+  transition: 0.2s;
+}
+
+.nav a:hover{
+  background: #f2f2f2;
+  color: #000000;
+}
+
+/* ===== MEDIA GRID ===== */
+.media-grid{
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 0.8fr;
+  gap: 14px;
+  width: 100%;
+}
+
+/* ===== MAIN IMAGE ===== */
+.media-main img{
+  width: 100%;
+  height: var(--media-height);
+  object-fit: cover;
+  border-radius: 16px;
+  cursor: pointer;
+}
+
+/* ===== VIDEO ===== */
+.media-video video,
+.media-video iframe{
+  width: 100%;
+  height: var(--media-height);
+  object-fit: cover;
+  border-radius: 16px;
+}
+
+/* ===== SIDE ===== */
+.media-side{
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 14px;
+}
+
+/* ===== MAP ===== */
+.media-map{
+  width: 100%;
+  height: calc(var(--media-height) / 2 - 7px);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* ===== MORE IMAGE ===== */
+.media-more{
+  position: relative;
+  width: 100%;
+  height: calc(var(--media-height) / 2 - 7px);
+}
+
+.media-more img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 16px;
+  display: block;
+}
+
+/* ===== BUTTON ===== */
+.view-more{
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* ===== DETAILS ===== */
+.property-title{
+  font-size: 18px;
+  font-weight: 800;
+  color:#666 /*#b58b63;*/
+}
+
+.property-price{
+  font-size: 40px;
+  font-weight: 700;
+}
+
+.property-location{
+  color: #666;
+}
+
+.property-specs{
+  display: flex;
+  gap: 15px;
+}
+
+/* ===== MAP BOTTOM ===== */
+.property-map{
+  height: 300px;
+  margin: 30px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* ===== HEADER ===== */
+.header{
+  border-bottom: 1px solid #eee;
+  background: #fff;
+}
+
+.header-content{
+  width: 95%;
+  max-width: 1300px;
+  margin: auto;
+  padding: 15px 0;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo{
+  font-size: 18px;
+  font-weight: 800;
+}
+
+/* ===== SUB HEADER (BACK BUTTON) ===== */
+.sub-header{
+  width: 95%;
+  max-width: 1300px;
+  padding: 10px 0;
+  margin: 10px auto; 
+}
+
+/* back button */
+.back-btn{
+  text-decoration: none;
+  color: #333;
+  font-size: 16px;
+
+  padding: 6px 10px;
+  border-radius: 8px;
+
+  transition: 0.2s;
+}
+
+.back-btn:hover{
+  background: #f2f2f2;
+}
+
+/* ===== FULLSCREEN GALLERY ===== */
+.gallery-modal{
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.95);
+  justify-content: center;
+  align-items: center;
+}
+
+.gallery-modal.active{
+  display: flex;
+}
+
+.modal-image{
+  max-width: 80%;
+  max-height: 80%;
+  border-radius: 12px;
+}
+
+/* arrows */
+.nav-btn{
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: #fff;
+  font-size: 30px;
+  padding: 10px 15px;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.prev{ right: 20px; }
+.next{ left: 20px; }
+
+/* close */
+.close-btn{
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  font-size: 40px;
+  color: #fff;
+  cursor: pointer;
+}
+
+/* ===== THUMBNAILS ===== */
+.thumbnail-bar{
+  position: absolute;
+  bottom: 30px;
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 10px;
+  max-width: 80%;
+}
+
+.thumbnail-bar img{
+  width: 80px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  opacity: 0.6;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.thumbnail-bar img.active{
+  border: 2px solid #fff;
+  opacity: 1;
+}
+
+/* details */
+.price{
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.location{
+  color: #777;
+  margin: 5px 0 0 0; 
+  font-size: 15px;
+}
+
+.quick-info{
+  display: flex;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.quick-info div{
+  background: #f5f5f5;
+  padding: 6px 10px; 
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.title{
+  font-size: 20px;
+  font-weight: 700;
+  margin: 8px 0;
+  color: #545454;
+}
+
+.description{
+  margin: 8px 0 12px 0;
+  line-height: 2;
+  color: #444;
+  width: 45%;
+ margin-top: 14px;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 16px;
+  background: #fafafa;
+
+}
+
+.box{
+  border: 1px solid #eee;
+  padding: 16px;
+  border-radius: 12px;
+  margin-top: 14px;
+  background: #fafafa;
+  width: 45%;
+}
+
+.box h3{
+  margin-bottom: 15px;
+}
+
+.grid{
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.features{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.feature{
+  background: #eee;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+/* ---- contact owner btn----- */
+.top-row{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-top: 10px;
+}
+
+/* right side (price + location) */
+.price-side{
+  display: flex;
+  flex-direction: column;
+}
+
+/* left side (buttons) */
+.contact-side{
+  display: flex;
+  gap: 10px;
+}
+
+/* buttons size fix */
+.contact-side .btn{
+  padding: 10px 16px;
+  font-size: 14px;
+}
+
+/* buttons style */
+.btn{
+  padding: 14px 22px;   /* size */
+  font-size: 15px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s;
+  background-color: #c9a57b;
+  color: #f2f2f2;
+}
+
+.btn-heart{
+  width: 50px;
+  height: 50px;
+  font-size: 36px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+
+  background: transparent; /*  no black bg */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+/* default */
+.btn-heart{
+  color: #888;
+}
+
+/* active heart color */ 
+.btn-heart.active{
+  color: #000000; /*  #e63946;  red  */
+}
+
+/* ------ btn bottom of the page ------------------------------ */
+
+.contact-owner-box{
+  width: 45%;
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  background: #fafafa;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+}
+.owner-info{
+  display: flex;
+  flex-direction: column;
+}
+
+.owner-name{
+  font-weight: ٥00;
+  font-size: 16px;
+}
+
+.contact-btn{
+  padding: 12px 20px;
+  font-size: 14px;
+}
+
+/* ------------------------------------------------------------ */
+/* ===== FOOTER ===== */
+.footer{
+  background: #c9a57b;
+  color: #fff;
+  margin-top: 50px;
+}
+
+/* container */
+.footer-container{
+  width: 95%;
+  max-width: 1300px;
+  margin: auto;
+  padding: 40px 0;
+
+  display: flex;
+  justify-content: space-between;
+  gap: 40px;
+}
+
+/* RIGHT SIDE */
+.footer-right{
+  max-width: 400px;
+}
+
+.footer-logo{
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.footer-desc{
+  color: rgba(255,255,255,0.85);
+}
+
+/* LEFT SIDE */
+.footer-left{
+  display: flex;
+  gap: 50px;
+}
+
+/* columns */
+.footer-col{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.footer-col h4{
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+/* links */
+.footer-col a{
+  text-decoration: none;
+  color: #fff;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+.footer-col a:hover{
+  opacity: 0.7;
+}
+
+/* bottom */
+.footer-bottom{
+  text-align: center;
+  padding: 15px 0;
+  border-top: 1px solid rgba(255,255,255,0.3);
+  font-size: 13px;
+}
+
+/* ------------------------------------------------------------ */
+/* ===== HEADER ===== */
+.top-bar{
+  height:35px;
+  padding:18px 22px;
+  background:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  box-shadow:0 2px 10px rgba(0,0,0,0.08);
+}
+
+.header-actions{
+  display:flex;
+  gap:10px;
+}
+
+.header-btn{
+  padding:8px 14px;
+  border-radius:10px;
+  text-decoration:none;
+  font-size:14px;
+  background:#f2ede7;
+  color:#333;
+  transition:0.2s;
+}
+
+.header-btn:hover{
+  background:#e6dfd6;
+}
+
+.header-btn.primary{
+  background:#c9a57b;
+  color:#fff;
+}
+
+.header-btn.primary:hover{
+  background:#b89368;
+}
+
+/* ===== NOTIFICATION BELL STYLES ===== */
+.notification-container {
+  position: relative;
+  display: inline-block;
+}
+
+.notification-bell {
+  cursor: pointer;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 50%;
+  font-size: 20px;
+  transition: all 0.2s ease;
+}
+
+.notification-bell:hover {
+  background: rgba(0, 0, 0, 0.15);
+  transform: scale(1.05);
+}
+
+.notification-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #dc2626;
+  color: white;
+  border-radius: 50%;
+  min-width: 18px;
+  height: 18px;
+  font-size: 10px;
+  font-weight: bold;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+.notification-dropdown {
+  display: none;
+  position: absolute;
+  top: 50px;
+  right: 0;
+  width: 340px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  max-height: 450px;
+  overflow: hidden;
+  direction: rtl;
+}
+
+.notification-dropdown.show {
+  display: block;
+}
+
+.notification-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid #eee;
+  font-weight: bold;
+  font-size: 16px;
+  background: white;
+  position: sticky;
+  top: 0;
+}
+
+.notification-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.notification-item:hover {
+  background: #fafafa;
+}
+
+.notification-item.unread {
+  background: #fef3c7;
+}
+
+.notification-item.unread:hover {
+  background: #fde68a;
+}
+
+.notification-title {
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.notification-message {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.5;
+}
+
+.notification-time {
+  font-size: 11px;
+  color: #999;
+  margin-top: 8px;
+}
+
+.notification-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #888;
+  font-size: 14px;
+}
+
+/* Blueprint section styling */
+#blueprintSection .box {
+  width: 45%;
+}
+
+@media (max-width: 768px) {
+  #blueprintSection .box {
+    width: 100%;
+  }
+}
+
+/* Blueprint section styling */
+#blueprintSection {
+  margin-top: 20px;
+  display: inline-block;
+  width: auto;
+}
+
+#blueprintSection .blueprint-box {
+  border: 1px solid #eee;
+  padding: 12px;
+  border-radius: 12px;
+  background: #fafafa;
+  width: 280px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#blueprintSection .blueprint-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+#blueprintSection .blueprint-box h3 {
+  margin-bottom: 10px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#blueprintSection .blueprint-preview {
+  width: 100%;
+  height: 160px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#blueprintSection .blueprint-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#blueprintSection .blueprint-preview .pdf-preview {
+  text-align: center;
+}
+
+#blueprintSection .blueprint-preview .pdf-preview span {
+  font-size: 48px;
+  display: block;
+}
+
+#blueprintSection .blueprint-preview .pdf-preview small {
+  font-size: 12px;
+  color: #666;
+}
+
+#blueprintSection .view-text {
+  text-align: center;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #c9a57b;
+}
+
+/* Blueprint Modal - Like Image Gallery */
+.blueprint-modal {
+  display: none;
+  position: fixed;
+  z-index: 10000;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.95);
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.blueprint-modal.active {
+  display: flex;
+}
+
+.blueprint-modal-content {
+  max-width: 90%;
+  max-height: 85%;
+  background: transparent;
+  border-radius: 12px;
+  overflow: auto;
+}
+
+.blueprint-modal-content iframe {
+  width: 800px;
+  height: 600px;
+  border: none;
+  background: white;
+  border-radius: 12px;
+}
+
+.blueprint-modal-content img {
+  max-width: 100%;
+  max-height: 85vh;
+  border-radius: 12px;
+}
+
+.close-blueprint {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  font-size: 40px;
+  color: #fff;
+  cursor: pointer;
+  z-index: 10001;
+}
+
+.download-blueprint {
+  position: absolute;
+  bottom: 30px;
+  right: 30px;
+  background: #c9a57b;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: bold;
+  z-index: 10001;
+}
+
+.download-blueprint:hover {
+  background: #b89368;
+}
+
+@media (max-width: 768px) {
+  .blueprint-modal-content iframe {
+    width: 95%;
+    height: 70vh;
+  }
+}
+
+/* ------------------------------------------------------------ */
+</style>
+</head>
+<body>
+
+  
+<div class="top-bar">
+
+  <div class="header-actions">
+    
+    <!-- Login button with notification bell next to it -->
+    <div style="display: flex; align-items: center; gap: 8px;">
+      
+      <!-- Notification Bell (hidden by default, shown when logged in) -->
+      <div class="notification-container" id="notificationContainer" style="display: none;">
+        <div class="notification-bell" id="notificationBell">
+          🔔
+          <span class="notification-badge" id="notificationBadge"></span>
+        </div>
+        <div class="notification-dropdown" id="notificationDropdown">
+          <div class="notification-header">📢 الإشعارات</div>
+          <div class="notification-list" id="notificationList"></div>
+        </div>
+      </div>
+    </div>
+          <a href="login.html" class="header-btn primary" id="loginBtn">تسجيل الدخول</a>
+
+    <a href="index.html" class="header-btn">الرئيسية</a>
+  </div>
+  
+  <strong>نقطة وصل</strong>
+
+</div>
+
+<div class="sub-header">
+    <a href="map.html" class="back-btn">  &nbsp;&lt;  العودة للخريطة </a>
+</div>
+
+
+
+<div class="property-container">
+  <!-- MEDIA -->
+  <div class="media-grid">
+
+    <div class="media-main" id="mainImage"></div>
+
+    <div class="media-video" id="videoContainer"></div>
+
+    <div class="media-side">
+      <div id="propertyMap" class="media-map"></div>
+      <div class="media-more" id="morePhotos"></div>
+    </div>
+
+  </div>
+
+  <!-- DETAILS -->
+  <div class="property-details" id="propertyDetails"></div>
+
+  <!-- Blueprint Section (below gallery, before details) -->
+<div id="blueprintSection" style="margin-top: 20px;"></div>
+
+</div>
+
+<!--  FULLSCREEN GALLERY -->
+<div id="galleryModal" class="gallery-modal">
+  <span class="close-btn" id="closeGallery">×</span>
+
+  <img id="modalImage" class="modal-image">
+
+  <button class="nav-btn prev" id="prevBtn">❮</button>
+  <button class="nav-btn next" id="nextBtn">❯</button>
+
+  <!-- thumbnail-->
+  <div id="thumbnailBar" class="thumbnail-bar"></div>
+</div>
+
+
+
+
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+// ===== GLOBAL =====
+let allPhotos = [];
+let currentIndex = 0;
+
+// ===== GET ID =====
+const params = new URLSearchParams(window.location.search);
+const propertyId = params.get("id");
+
+// ===== LOAD PROPERTY =====
+async function loadProperty() {
+  try {
+    const res = await fetch(`http://127.0.0.1:3001/api/properties/${propertyId}`);
+    const property = await res.json();
+
+    // ===== GET FEATURES =====
+    let featureList = "";
+    try {
+      const fRes = await fetch(`http://127.0.0.1:3001/api/properties/${propertyId}/features`);
+      const features = await fRes.json();
+      featureList = features.map(f => `<span class="feature">${f.name}</span>`).join("");
+    } catch {
+      featureList = "<span>لا يوجد</span>";
+    }
+
+    // ===== GET OWNER INFO =====
+    let ownerName = "غير معروف";
+    try {
+      const ownerRes = await fetch(`http://127.0.0.1:3001/api/properties/${propertyId}/owner`);
+      if (ownerRes.ok) {
+        const owner = await ownerRes.json();
+        ownerName = owner.full_name || "غير معروف";
+      }
+    } catch {
+      ownerName = "غير معروف";
+    }
+
+    // ===== RENDER DETAILS =====
+    document.getElementById("propertyDetails").innerHTML = `
+
+    <div class="top-row">
+        <div class="price-side">
+            <div class="price">${Number(property.price).toLocaleString()} ريال</div>
+            <div class="location">
+            ${property.district || ""} - ${property.city || ""} - ${property.neighborhood || ""}
+            </div>
+        </div>
+
+        <div class="contact-side">
+            <button id="favBtn" class="btn-heart">♡</button>
+            <button class="btn btn-primary contact-btn">تواصل مع المالك</button>
+        </div>
+    </div>
+
+      <div class="quick-info">
+        <div>${property.area_space || "-"} م²</div>
+        <div>${property.bedrooms || "0"} غرف</div>
+        <div>${property.bathrooms || "0"} حمام</div>
+      </div>
+
+      <p class="title">${property.title || "-"}</p>
+
+      <p class="description"><strong>التفاصيل</strong><br>${property.description || "لا يوجد تفاصيل"}</p>
+
+      <div class="box">
+        <h3>معلومات العقار</h3>
+        <div class="grid">
+          <div><strong>نوع العقار:</strong> ${property.property_type || "-"}</div>
+          <div><strong>نوع العرض:</strong> ${property.listing_type || "-"}</div>
+          <div><strong>استخدام العقار:</strong> ${property.usage || "-"}</div>
+          <div><strong>واجهة العقار:</strong> ${property.facade || "-"}</div>
+          <div><strong>عمر العقار:</strong> ${property.property_age || "-"}</div>
+          <div><strong>رقم الاعلان:</strong> ${property.ad_number || "-"}</div>
+          <div><strong>تاريخ اضافة الاعلان:</strong> ${property.created_at ? new Date(property.created_at).toLocaleDateString("ar-SA") : "-"}</div>
+        </div>
+      </div>
+
+      <div class="box">
+        <h3>المزايا والخدمات</h3>
+        <div class="features">
+          ${featureList || "لا يوجد تفاصيل عن المزايا والخدمات"}
+        </div>
+      </div>
+
+    <div class="contact-owner-box">
+        <div class="owner-info">
+            <div class="owner-name"><strong>المالك</strong> ${ownerName}</div>
+        </div>
+
+        <button class="btn btn-primary contact-btn">
+            تواصل مع المالك
+        </button>
+    </div>
+
+    `;
+// -------------------------------------------------------
+// ===== FAV BTN =====
+// -------------------------------------------------------
+
+    const favBtn = document.getElementById("favBtn");
+
+    favBtn.onclick = () => handleFavoriteClick(propertyId, favBtn);
+    
+    checkIfFavorited(propertyId, favBtn);
+
+
+// -------------------------------------------------------
+// ===== CONTACT BTN =====
+// -------------------------------------------------------
+
+
+    document.querySelectorAll(".contact-btn").forEach(btn => {
+    btn.onclick = () => {
+        const user = JSON.parse(localStorage.getItem("user") || "null");
+        if (!user?.id) {
+        alert("يجب تسجيل الدخول للتواصل مع المالك");
+        window.location.href = "Login.html";
+        return;
+        }
+        if (user.role === "owner") {
+        alert("لا يمكنك التواصل انت مالك!");
+        return;
+        }
+        window.location.href = `chat_searcher.html?property_id=${propertyId}`;
+    };
+    });
+
+    // ===== LOAD MEDIA & MAP =====
+    loadMedia(property);
+
+    if (property.lat && property.lng) {
+      loadMap(property.lat, property.lng);
+    }
+    // ===== LOAD BLUEPRINT =====
+    loadBlueprint(property);
+
+  } catch (err) {
+    console.error("LOAD ERROR:", err);
+    document.body.innerHTML = "<h2>Something went wrong</h2>";
+  }
+}
+
+// ===== MEDIA =====
+async function loadMedia(property) {
+
+  const res = await fetch(`http://127.0.0.1:3001/api/properties/${propertyId}/photos`);
+  const photos = await res.json();
+
+  allPhotos = photos;
+
+  const main = document.getElementById("mainImage");
+  const videoDiv = document.getElementById("videoContainer");
+  const more = document.getElementById("morePhotos");
+
+  main.innerHTML = "";
+  videoDiv.innerHTML = "";
+  more.innerHTML = "";
+
+  if (photos[0]) {
+    main.innerHTML = `<img id="mainImg" src="http://127.0.0.1:3001${photos[0].photo_path}" onerror="this.src='pic/n.png'">`;
+    document.getElementById("mainImg").onclick = () => openGallery(0);
+  } else {
+    main.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f5f5f5;border-radius:16px;color:#999;">لا توجد صور</div>`;
+  }
+
+  if (property.video_url) {
+    if (property.video_url.includes("youtube")) {
+      videoDiv.innerHTML = `<iframe src="${property.video_url}" allowfullscreen></iframe>`;
+    } else {
+      videoDiv.innerHTML = `
+        <video controls>
+          <source src="http://127.0.0.1:3001${property.video_url}">
+        </video>
+      `;
+    }
+  } else {
+    videoDiv.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f5f5f5;border-radius:16px;color:#999;">لا يوجد فيديو</div>`;
+  }
+
+  if (photos[1]) {
+    more.innerHTML = `
+      <img src="http://127.0.0.1:3001${photos[1].photo_path}" onerror="this.src='pic/n.png'">
+      <div class="view-more">عرض المزيد</div>
+    `;
+    document.querySelector(".view-more").onclick = () => openGallery(1);
+  } else if (photos[0]) {
+    more.innerHTML = `
+      <img src="http://127.0.0.1:3001${photos[0].photo_path}" onerror="this.src='pic/n.png'">
+      <div class="view-more">عرض الصورة</div>
+    `;
+    document.querySelector(".view-more").onclick = () => openGallery(0);
+  }
+}
+
+//============ BLUEPRINT with Preview Modal ============
+let currentBlueprintUrl = null;
+let currentBlueprintType = null;
+
+function loadBlueprint(property) {
+  const container = document.getElementById("blueprintSection");
+  if (!container) return;
+  
+  if (property.blueprint_url) {
+    const fileUrl = `http://127.0.0.1:3001${property.blueprint_url}`;
+    const fileExt = property.blueprint_url.split('.').pop().toLowerCase();
+    const isPdf = fileExt === 'pdf';
+    
+    currentBlueprintUrl = fileUrl;
+    currentBlueprintType = isPdf ? 'pdf' : 'image';
+    
+    container.innerHTML = `
+      <div class="blueprint-box" onclick="openBlueprintModal()">
+        <h3> المخطط الهندسي</h3>
+        <div class="blueprint-preview">
+          ${isPdf ? `
+            <div class="pdf-preview">
+              <span>📄</span>
+              <small>ملف PDF</small>
+            </div>
+          ` : `
+            <img src="${fileUrl}" alt="المخطط الهندسي" onerror="this.src='pic/n.png'">
+          `}
+        </div>
+        <div class="view-text"> اضغط لعرض المخطط بشكل أكبر</div>
+      </div>
+    `;
+  } else {
+    container.innerHTML = '';
+  }
+}
+
+// Open blueprint modal
+function openBlueprintModal() {
+  if (!currentBlueprintUrl) return;
+  
+  let modal = document.getElementById('blueprintModal');
+  if (!modal) {
+    // Create modal if it doesn't exist
+    modal = document.createElement('div');
+    modal.id = 'blueprintModal';
+    modal.className = 'blueprint-modal';
+    modal.innerHTML = `
+      <span class="close-blueprint" onclick="closeBlueprintModal()">×</span>
+      <div class="blueprint-modal-content" id="blueprintModalContent"></div>
+      <a href="#" id="downloadBlueprintBtn" class="download-blueprint" download> تحميل المخطط</a>
+    `;
+    document.body.appendChild(modal);
+  }
+  
+  const contentDiv = document.getElementById('blueprintModalContent');
+  const downloadBtn = document.getElementById('downloadBlueprintBtn');
+  
+  if (currentBlueprintType === 'pdf') {
+    contentDiv.innerHTML = `<iframe src="${currentBlueprintUrl}" frameborder="0"></iframe>`;
+    downloadBtn.href = currentBlueprintUrl;
+  } else {
+    contentDiv.innerHTML = `<img src="${currentBlueprintUrl}" alt="المخطط الهندسي">`;
+    downloadBtn.href = currentBlueprintUrl;
+  }
+  
+  modal.classList.add('active');
+}
+
+// Close blueprint modal
+function closeBlueprintModal() {
+  const modal = document.getElementById('blueprintModal');
+  if (modal) {
+    modal.classList.remove('active');
+  }
+}
+
+// Close blueprint modal with Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeBlueprintModal();
+  }
+});
+
+// Close blueprint modal when clicking outside content
+document.addEventListener('click', function(e) {
+  const modal = document.getElementById('blueprintModal');
+  if (modal && modal.classList.contains('active')) {
+    const content = document.getElementById('blueprintModalContent');
+    if (content && !content.contains(e.target) && !e.target.closest('.blueprint-box')) {
+      closeBlueprintModal();
+    }
+  }
+});
+
+// ===== GALLERY =====
+function openGallery(index){
+  currentIndex = index;
+  const modal = document.getElementById("galleryModal");
+  modal.classList.add("active");
+  renderThumbnails();
+  showImage();
+}
+
+function closeGallery(){
+  document.getElementById("galleryModal").classList.remove("active");
+}
+
+function showImage(){
+  document.getElementById("modalImage").src =
+    `http://127.0.0.1:3001${allPhotos[currentIndex].photo_path}`;
+  highlightActiveThumbnail();
+}
+
+function nextImage(){
+  currentIndex = (currentIndex + 1) % allPhotos.length;
+  showImage();
+}
+
+function prevImage(){
+  currentIndex = (currentIndex - 1 + allPhotos.length) % allPhotos.length;
+  showImage();
+}
+
+// ===== THUMBNAILS =====
+function renderThumbnails(){
+  const bar = document.getElementById("thumbnailBar");
+  bar.innerHTML = "";
+
+  allPhotos.forEach((photo, index) => {
+    const img = document.createElement("img");
+    img.src = `http://127.0.0.1:3001${photo.photo_path}`;
+    img.onclick = () => {
+      currentIndex = index;
+      showImage();
+    };
+    bar.appendChild(img);
+  });
+}
+
+function highlightActiveThumbnail(){
+  const thumbs = document.querySelectorAll("#thumbnailBar img");
+  thumbs.forEach((img, i) => {
+    img.classList.toggle("active", i === currentIndex);
+  });
+}
+
+// ===== EVENTS =====
+document.getElementById("closeGallery").onclick = closeGallery;
+document.getElementById("nextBtn").onclick = nextImage;
+document.getElementById("prevBtn").onclick = prevImage;
+
+document.getElementById("galleryModal").onclick = (e) => {
+  if (e.target.id === "galleryModal") {
+    closeGallery();
+  }
+};
+
+// ===== MAP =====
+function loadMap(lat, lng) {
+  const map = L.map("propertyMap").setView([lat, lng], 14);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+  L.marker([lat, lng]).addTo(map);
+}
+
+// ===== START =====
+loadProperty();
+</script>
+
+
+<!-- ====================== footer =================================== -->
+<footer class="footer">
+
+  <div class="footer-container">
+
+    <!-- RIGHT SIDE -->
+    <div class="footer-right">
+      <h2 class="footer-logo">نقطة وصل</h2>
+      <p class="footer-desc">
+        منصة رقمية لعرض العقارات تربط المالك والباحث مباشرة دون وسطاء،
+        وتوفر تجربة موثوقة قائمة على التحقق، الشفافية، وجودة المحتوى.
+      </p>
+    </div>
+
+    <!-- LEFT SIDE -->
+    <div class="footer-left">
+
+      <!-- COLUMN 1 -->
+      <div class="footer-col">
+        <h4>الدعم</h4>
+        <a href="mailto:nuqtatwasl.2026@outlook.com">تواصل معنا</a>
+        <a href="#">الاسئلة الشائعة</a>
+        <a href="#">الشروط والاحكام</a>
+      </div>
+
+      <!-- COLUMN 2 -->
+      <div class="footer-col">
+        <h4>روابط سريعة</h4>
+        <a href="index.html">الرئيسية</a>
+        <a href="map.html">الخريطة</a>
+        <a href="#" id="accountLink">الحساب</a>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- BOTTOM -->
+  <div class="footer-bottom">
+    © 2026 Qassim - نقطة وصل
+  </div>
+
+</footer>
+</body>
+
+<script src="/backend/fav.js"></script>
+<script src="/backend/notification.js"></script>
+
+<script src="/backend/auth.js"></script>
+
+<script>
+const loginBtn = document.getElementById("loginBtn");
+const user = JSON.parse(localStorage.getItem("user") || "null");
+
+if (loginBtn && user) {
+
+  let roleText = "";
+  let profilePage = "searcher_profile.html";
+
+  if (user.role === "owner") {
+    roleText = "مالك";
+    profilePage = "owner_profile.html";
+
+  } else if (user.role === "searcher") {
+    roleText = "باحث";
+    profilePage = "searcher_profile.html";
+
+  } else if (user.role === "admin") {
+    roleText = "مدير النظام";
+    profilePage = "admin.html";
+  }
+
+  loginBtn.innerHTML =
+    "<span dir='ltr'>(" + roleText + ")</span> " + user.full_name;
+
+  loginBtn.href = profilePage;
+}
+</script>
+
+
+
+
+</html>

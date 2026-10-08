@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <!-- Character encoding (supports Arabic correctly) -->
+  <meta charset="UTF-8">
+
+  <!-- Page title shown in browser tab -->
+  <title>خريطة العقارات</title>
+
+  <!-- ================= Leaflet CSS =================
+       Leaflet is the library used to display the interactive map.
+       This stylesheet is required for map tiles, controls, and markers to appear correctly.
+  -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- ================= Project CSS =================
+       Your custom styles for layout (top-bar, map, property cards, etc.)
+  -->
+  <link rel="stylesheet" href="style.css">
+  <style>
+
+/* ================= MAP PAGE (map.html) ================= */
+
+
+body{
+  padding-top:72px;
+}
+html, body{
+  height:100%;
+}
+
+.top-bar{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  z-index:200;
+
+  height:72px;
+  padding:18px 22px;
+  background:#fff;
+
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+
+  box-shadow:0 2px 10px rgba(0,0,0,0.08);
+}
+
+.city-pill{
+  background:rgba(0,0,0,.06);
+  padding:6px 12px;
+  border-radius:10px;
+  font-weight:400;
+  color:rgba(0,0,0,.75);
+  font-size: 18px;
+}
+
+/* Main layout */
+.main{
+  display:flex;
+  gap:20px;
+  padding:20px;
+  align-items:flex-start;
+  overflow:hidden; /* important */
+  height:calc(100vh - 72px - 72px); 
+
+  direction: ltr; /* keep map left, cards right */
+}
+
+/* Map box */
+.map-wrapper{
+  width:50%;
+  aspect-ratio:1/1;
+  position:sticky;
+  top:90px;
+}
+
+#map{
+  width:100%;
+  height:100%;
+}
+
+/* Properties grid */
+.property-section{
+  flex:1;
+
+  display:grid;
+  grid-template-columns:repeat(2, 1fr);
+  gap:20px;
+
+  direction: rtl;
+  scroll-behavior:smooth;
+
+  max-height:calc(100vh - 160px); 
+  overflow-y:auto;
+  scrollbar-gutter: stable;
+}
+
+/* ===== CARD ===== */
+.property-card{
+  background:#fff;
+  border-radius:16px;
+  overflow:hidden;
+  box-shadow:0 6px 18px rgba(0,0,0,0.08);
+  transition:0.25s;
+}
+
+.property-card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 10px 22px rgba(0,0,0,0.12);
+}
+
+.property-card.active{
+  outline:2px solid rgba(181,139,99,.50);
+  background:rgba(181,139,99,.06);
+}
+
+.top-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+
+.mapprice{
+  font-weight:900;
+  color:rgba(0,0,0,.80);
+}
+
+/* IMAGE */
+.card-img{
+  position:relative;
+  height:170px;
+  overflow:hidden;
+}
+
+.card-img img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  transition:0.3s;
+}
+
+.property-card:hover .card-img img{
+  transform:scale(1.05);
+}
+
+/* FAVORITE */
+.fav{
+  position:absolute;
+  top:10px;
+  left:10px;
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  border:none;
+  background:#fff;
+  cursor:pointer;
+  font-size:16px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* INFO */
+.info{
+  padding:12px 14px;
+}
+
+/* PRICE */
+.price{
+  font-weight:900;
+  color:#c9a57b;
+  font-size:16px;
+}
+
+/* TITLE */
+.name{
+  margin-top:6px;
+  font-weight:900;
+  font-size:15px;
+}
+
+/* LOCATION */
+.location{
+  margin-top:4px;
+  font-size:13px;
+  color:#777;
+}
+
+/* DETAILS */
+.details{
+  margin-top:6px;
+  font-size:13px;
+  color:#555;
+}
+
+/* BUTTON */
+.details-btn{
+  display:block;
+  margin-top:10px;
+  text-align:center;
+  padding:10px;
+  border-radius:10px;
+  background:#f2ede7;
+  font-weight:bold;
+}
+
+.details-btn:hover{
+  background:#e6dfd6;
+}
+
+/* empty state */
+.empty-state{
+  grid-column:1 / -1;
+  padding:16px;
+  text-align:center;
+  color:#666;
+  background:#fff;
+  border:1px solid rgba(0,0,0,.06);
+  border-radius:16px;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media (max-width:980px){
+  .main{
+    flex-direction:column;
+  }
+
+  .map-wrapper{
+    width:100%;
+  }
+
+  .property-section{
+    grid-template-columns:repeat(2, 1fr);
+  }
+}
+
+@media (max-width:520px){
+  .property-section{
+    grid-template-columns:1fr;
+  }
+}
+
+.property-section::-webkit-scrollbar{
+  width:6px;
+}
+
+.property-section::-webkit-scrollbar-thumb{
+  background:#ccc;
+  border-radius:10px;
+}
+
+/* ================= FILTERS ================= */
+/* ===== STICKY FILTER BAR ===== */
+.filters{
+  position:sticky;
+  top:72px; /* same height as header */
+  z-index:100;
+
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  align-items:center;
+
+  padding:15px 20px;
+  background:#fff;
+  backdrop-filter: blur(8px);
+  
+  border-bottom:1px solid #eee;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+  
+  border-top:1px solid #f0f0f0;
+  margin-bottom:2px;
+}
+
+
+/* inputs + selects */
+.filters select,
+.filters input{
+  height:42px;
+  padding:0 12px;
+  border-radius:10px;
+  border:1px solid #ddd;
+  background:#fff;
+  font-size:14px;
+  transition:0.2s;
+}
+
+.filters select:focus,
+.filters input:focus{
+  border-color:#c9a57b;
+  outline:none;
+  box-shadow:0 0 0 2px rgba(201,165,123,0.15);
+}
+
+/* search takes more space */
+.search-box{
+  flex:1;
+  min-width:220px;
+}
+
+/* clear button */
+#clearFilters{
+  background:#eee;
+  border:none;
+  padding:0 14px;
+  height:42px;
+  border-radius:10px;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+#clearFilters:hover{
+  background:#ddd;
+}
+
+/* results count */
+#resultsCount{
+  margin-inline-start:auto;
+  font-weight:bold;
+  color:#555;
+}
+
+/* ===== SEARCH BOX ===== */
+.search-box{
+  position:relative;
+  flex:1;
+  min-width:220px;
+}
+
+/* input */
+.search-box input{
+  width:100%;
+  padding:12px 14px 12px 40px; /* space for icon */
+  border-radius:12px;
+  border:1px solid #ddd;
+  font-size:14px;
+  transition:0.25s;
+  background:#fff;
+}
+
+/* icon */
+.search-icon{
+  position:absolute;
+  left:12px;
+  top:50%;
+  transform:translateY(-50%);
+  font-size:14px;
+  color:#888;
+  pointer-events:none;
+  transition:0.25s;
+}
+
+/* focus effect */
+.search-box input:focus{
+  border-color:#c9a57b;
+  box-shadow:0 0 0 3px rgba(201,165,123,0.15);
+  outline:none;
+}
+
+/* icon animation */
+.search-box:focus-within .search-icon{
+  color:#c9a57b;
+}
+.search-box input:not(:placeholder-shown) + .search-icon{
+  color:#c9a57b;
+}
+
+/* hover subtle */
+.search-box:hover input{
+  border-color:#c9a57b;
+}
+
+
+/* ===== HEADER ACTIONS ===== */
+.header-actions{
+  display:flex;
+  gap:10px;
+}
+
+/* buttons */
+.header-btn{
+  padding:8px 14px;
+  border-radius:10px;
+  text-decoration:none;
+  font-size:14px;
+  background:#f2ede7;
+  color:#333;
+  transition:0.2s;
+}
+
+.header-btn:hover{
+  background:#e6dfd6;
+}
+
+/* primary (login) */
+.header-btn.primary{
+  background:#c9a57b;
+  color:#fff;
+}
+
+.header-btn.primary:hover{
+  background:#b89368;
+}
+
+
+  </style>
+</head>
+
+<body>
+
+  <!-- ================= HEADER / TOP BAR =================
+       Displays the brand name and the currently selected city.
+       The city label is updated dynamically via JavaScript (script.js).
+  -->
+  <div class="top-bar">
+
+
+  <!-- RIGHT (actions) -->
+    <div class="header-actions">
+
+    <!-- Login button / User area with notification bell -->
+    <div style="display: flex; align-items: center; gap: 8px;">
+    
+    <!-- Notification Bell (hidden by default, shown when logged in) -->
+    <div class="notification-container" id="notificationContainer" style="display: none;">
+        <div class="notification-bell" id="notificationBell">
+        🔔
+        <span class="notification-badge" id="notificationBadge"></span>
+        </div>
+        <div class="notification-dropdown" id="notificationDropdown">
+        <div class="notification-header">📢 الإشعارات</div>
+        <div class="notification-list" id="notificationList"></div>
+        </div>
+    </div>
+
+    <a href="login.html" class="header-btn primary" id="loginBtn">تسجيل الدخول</a>
+
+    <a href="index.html" class="header-btn">الرئيسية</a>
+
+    <span class="city-pill">
+        المدينة | <span id="cityLabel">الكل</span>
+    </span>
+</div>
+  </div>
+
+  <!-- LEFT (logo / name) -->
+  <strong>نقطة وصل</strong>
+
+  </div>
+
+<div class="filters">
+
+  <div class="search-box">
+  <span class="search-icon">⌕</span>
+  <input type="text" id="searchInput" placeholder="ابحث عن عقار، مدينة، حي...">
+</div>
+
+
+  <select id="filterCity">
+    <option value="">اختار المدينة</option>
+    <option value="بريدة">بريدة</option>
+    <option value="رياض الخبراء">رياض الخبراء</option>
+    <option value="الرياض">الرياض</option>
+    <option value="جدة">جدة</option>
+    <option value="مكة">مكة</option>
+    <option value=" المدينة المنورة">المدينة المنورة</option>
+    <option value="الدمام">الدمام</option>
+    <option value="الخبر">الخبر</option>
+    <option value="الظهران">الظهران</option>
+    <option value="عنيزة">عنيزة</option>
+    <option value="حائل">حائل</option>
+    <option value="تبوك">تبوك</option>
+    <option value="أبها">أبها</option>
+    <option value="خميس مشيط">خميس مشيط</option>
+    <option value="جازان">جازان</option>
+    <option value="نجران">نجران</option>
+    <option value="الطائف">الطائف</option>
+    <option value="ينبع">ينبع</option>
+    <option value="الجبيل">الجبيل</option>
+    <option value="الأحساء">الأحساء</option>
+    <option value="عرعر">عرعر</option>
+    <option value="سكاكا">سكاكا</option>
+    <option value="القريات">القريات</option>
+  </select>
+
+  <select id="filterType">
+    <option value="">نوع العقار</option>
+    <option value="فيلا">فيلا</option>
+    <option value="شقة">شقة</option>
+    <option value="استراحة">استراحة</option>
+    <option value="ارض">أرض</option>
+    <option value="محل">محل</option>
+    <option value="مستودع">مستودع</option>
+  </select>
+
+  <select id="filterListing">
+    <option value="">نوع العرض</option>
+    <option value="بيع">بيع</option>
+    <option value="ايجار">إيجار</option>
+  </select>
+
+  <select id="filterBeds">
+    <option value="">عدد الغرف</option>
+    <option value="1">1+</option>
+    <option value="2">2+</option>
+    <option value="3">3+</option>
+    <option value="4">4+</option>
+  </select>
+
+  <input type="number" id="minPrice" placeholder="أقل سعر">
+  <input type="number" id="maxPrice" placeholder="أعلى سعر">
+
+  <button id="clearFilters">مسح الفلاتر</button>
+
+  <div class="results-count" id="resultsCount">0 عقار</div>
+
+</div>
+
+
+  <!-- ================= MAIN CONTENT =================
+       The page is split into:
+       - Left side: Map
+       - Right side: Property cards list
+  -->
+  <div class="main">
+
+    <!-- ================= LEFT SIDE: MAP =================
+         map-wrapper holds the map container.
+         Leaflet will render the map inside the #map element.
+    -->
+    <div class="map-wrapper">
+      <!-- Leaflet needs a container with a fixed height via CSS -->
+      <div id="map"></div>
+    </div>
+
+    <!-- ================= RIGHT SIDE: PROPERTIES LIST =================
+         This section will display property cards.
+         The content is inserted dynamically using JavaScript (script.js),
+         based on the chosen city and/or map markers.
+    -->
+    <div class="property-section" id="property-section">
+      <!-- JavaScript will insert property cards here -->
+    </div>
+  </div>
+
+  <!-- ================= Leaflet JS =================
+       This script provides the map functionality:
+       - Creating the map
+       - Adding tile layers
+       - Adding markers and popups
+       It must be loaded BEFORE your custom script.js
+  -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- ================= Project JavaScript =================
+        script is responsible for:
+       - Reading the selected city from URL parameters (if used)
+       - Updating #cityLabel
+       - Initializing the Leaflet map
+       - Adding property markers
+       - Rendering property cards into #property-section
+  -->
+
+
+
+
+  <script>
+let allProperties = [];
+
+// ================= GET CITY FROM URL =================
+
+// Read URL parameters (e.g. map.html?city=الرياض)
+const params = new URLSearchParams(window.location.search);
+
+// Get selected city from URL
+const selectedCity = params.get("city"); 
+
+const urlParams = new URLSearchParams(window.location.search);
+
+// fill filters from URL
+document.getElementById("filterCity").value =
+  urlParams.get("city") || "";
+
+document.getElementById("filterType").value =
+  urlParams.get("type") || "";
+
+document.getElementById("filterListing").value =
+  urlParams.get("listing") || "";
+
+document.getElementById("filterBeds").value =
+  urlParams.get("beds") || "";
+
+document.getElementById("minPrice").value =
+  urlParams.get("min") || "";
+
+document.getElementById("maxPrice").value =
+  urlParams.get("max") || "";
+
+// ================= UPDATE UI =================
+
+// Get element that displays selected city
+const cityLabel = document.getElementById("cityLabel");
+
+// Update text (if no city → show "الكل")
+if (cityLabel) cityLabel.textContent = selectedCity || "الكل";
+
+if(selectedCity){
+  cityLabel.textContent = selectedCity;
+}
+
+// ================= INITIALIZE MAP =================
+
+// Create Leaflet map centered on Qassim (default location)
+const map = L.map("map").setView([26.37, 43.95], 12);
+
+// Add OpenStreetMap tiles (map background)
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  attribution: "&copy; OpenStreetMap contributors",
+}).addTo(map);
+
+
+// Store markers by property ID (for future use if needed)
+const markerMap = {};
+
+
+// ================= FETCH DATA FROM API =================
+
+// Backend API base URL
+const API_BASE = "http://127.0.0.1:3001/api/properties";
+
+// If city selected → filter by city
+//const url = selectedCity
+ // ? `${API_BASE}?city=${encodeURIComponent(selectedCity)}`
+  //: API_BASE;
+
+const url = API_BASE;
+
+// Fetch properties from backend
+fetch(url)
+  .then((response) => response.json())
+.then((properties) => {
+
+  allProperties = properties;
+  applyFilters();
+
+  // ✅ if coming from main page
+
+if(selectedCity && !urlParams.get("city")){
+  document.getElementById("filterCity").value = selectedCity;
+}
+});
+
+// ================= FIT MAP TO MARKERS =================
+
+function fitMapToProperties(properties) {
+
+  // Extract valid coordinates only
+  const coords = properties
+    .map(p => [parseFloat(p.lat), parseFloat(p.lng)])
+    .filter(([lat, lng]) => !isNaN(lat) && !isNaN(lng));
+
+  // If no valid coordinates → do nothing
+  if (coords.length === 0) return;
+
+  // Create bounds and fit map to them
+  const bounds = L.latLngBounds(coords);
+  map.fitBounds(bounds, { padding: [40, 40] });
+}
+
+
+// ================= DISPLAY PROPERTIES =================
+
+function displayProperties(properties) {
+
+  // Get container for property cards
+  const propertySection = document.querySelector(".property-section");
+
+  // Clear previous results
+  propertySection.innerHTML = "";
+
+  // If no properties found → show message
+  if (!properties || properties.length === 0) {
+    propertySection.innerHTML = `<div class="empty-state">لا توجد عقارات لهذه المدينة.</div>`;
+    return;
+  }
+
+  // Loop through each property
+    properties.forEach(async (property) => {
+
+    // Convert coordinates to numbers
+    const lat = parseFloat(property.lat);
+    const lng = parseFloat(property.lng);
+
+    // Skip invalid coordinates
+    if (isNaN(lat) || isNaN(lng)) return;
+
+    // ================= CREATE MAP MARKER =================
+
+    const marker = L.marker([lat, lng])
+      .addTo(map)
+      .bindPopup(`<b>${property.title}</b><br>${property.price} ريال`);
+
+    // Save marker using property ID
+    markerMap[property.id] = marker;
+
+
+    // ================= CREATE PROPERTY CARD =================
+
+    const card = document.createElement("div");
+    card.classList.add("property-card");
+
+    // Store property ID inside element
+    card.setAttribute("data-id", property.id);
+
+    let imageUrl = "https://via.placeholder.com/400";
+
+    try {
+    const res = await fetch(
+        `http://127.0.0.1:3001/api/properties/${property.id}/photos`
+    );
+
+    const photos = await res.json();
+
+    if (photos && photos.length > 0) {
+        imageUrl = `http://127.0.0.1:3001${photos[0].photo_path}`;
+    }
+
+    } catch (err) {
+    console.error("Image load error", err);
+    }
+
+    // Card HTML content
+card.innerHTML = `
+  <div class="card-img">
+    <img src="${imageUrl}" onerror="this.onerror=null; this.src='/pic/n.png';"  alt="نقطة وصل">
+
+    <button class="fav" type="button" data-property-id="${property.id}">♡</button>
+  </div>
+
+  <div class="info">
+
+    <div class="price">${Number(property.price).toLocaleString()} ريال</div>
+
+    <div class="name">${property.title}</div>
+
+    <div class="location">
+      ${property.district} - ${property.city} - ${property.neighborhood || ""}
+
+    </div>
+
+    <div class="details">
+      🛏 ${property.bedrooms || 0}
+      &nbsp; | &nbsp;
+      🛁 ${property.bathrooms || 0}
+      &nbsp; | &nbsp;
+      📐 ${property.area_space || 0} م²
+    </div>
+
+    <a class="details-btn" href="property.html?id=${property.id}">
+      عرض التفاصيل
+    </a>
+
+  </div>
+`;
+
+    // Add card to page
+    propertySection.appendChild(card);
+
+// -------------------------------------------------------
+// ================= FAVORITE BUTTON =================
+// -------------------------------------------------------
+     const favBtn = card.querySelector(".fav");
+
+    favBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      handleFavoriteClick(property.id, favBtn);
+    });
+
+    checkIfFavorited(property.id, favBtn);
+
+// -------------------------------------------------------
+// ================= INTERACTIONS =================
+// -------------------------------------------------------
+
+    // When marker is clicked → highlight the card
+    marker.on("click", () => {
+
+      // Remove active class from all cards
+      document
+        .querySelectorAll(".property-card")
+        .forEach((c) => c.classList.remove("active"));
+
+      // Add active class to this card
+      card.classList.add("active");
+
+      // Scroll to the card smoothly
+      card.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+
+
+    // When card is clicked → focus map on marker
+    card.addEventListener("click", (e) => {
+
+      // If clicking "details" button → ignore
+      if (e.target.closest(".details-btn")) return;
+
+      // Move map to marker location
+      map.setView([lat, lng], 14);
+
+      // Open marker popup
+      marker.openPopup();
+
+      // Highlight selected card
+      document
+        .querySelectorAll(".property-card")
+        .forEach((c) => c.classList.remove("active"));
+
+      card.classList.add("active");
+    });
+
+  });
+}
+
+// -------------------------------------------------------
+// FILTERS LOGIC 
+// -------------------------------------------------------
+function applyFilters(){
+
+  const search = document.getElementById("searchInput").value.toLowerCase();
+  const city = document.getElementById("filterCity").value;
+  const type = document.getElementById("filterType").value;
+  const listing = document.getElementById("filterListing").value;
+  const beds = document.getElementById("filterBeds").value;
+  const minPrice = document.getElementById("minPrice").value;
+  const maxPrice = document.getElementById("maxPrice").value;
+
+  document.getElementById("cityLabel").textContent =
+  city || "الكل";
+
+  const params = new URLSearchParams();
+
+if(city) params.set("city", city);
+if(type) params.set("type", type);
+if(listing) params.set("listing", listing);
+if(beds) params.set("beds", beds);
+if(minPrice) params.set("min", minPrice);
+if(maxPrice) params.set("max", maxPrice);
+
+// update URL without reload
+window.history.replaceState({}, "", "?" + params.toString());
+
+  let filtered = allProperties.filter(p => {
+
+    if(city && p.city !== city) return false;
+
+    if(type && p.property_type !== type) return false;
+
+    if(listing && p.listing_type !== listing) return false;
+
+    if(beds && Number(p.bedrooms) < Number(beds)) return false;
+
+    if(minPrice && Number(p.price) < Number(minPrice)) return false;
+
+    if(maxPrice && Number(p.price) > Number(maxPrice)) return false;
+
+    // SEARCH FILTER
+    if(search){
+        const text = `
+            ${p.title || ""}
+            ${p.city || ""}
+            ${p.district || ""}
+            ${p.neighborhood || ""}
+        `.toLowerCase();
+
+        if(!text.includes(search)) return false;
+    }
+
+    return true;
+  });
+
+  // remove old markers
+  map.eachLayer(layer => {
+    if(layer instanceof L.Marker) map.removeLayer(layer);
+  });
+
+  displayProperties(filtered);
+  fitMapToProperties(filtered);
+
+  // ✅ update count
+  document.getElementById("resultsCount").textContent =
+    filtered.length + " عقار";
+}
+
+document.querySelectorAll(".filters select, .filters input")
+.forEach(el => {
+  el.addEventListener("input", applyFilters);
+});
+
+// -------------------------------------------------------
+document.getElementById("clearFilters").onclick = () => {
+
+  document.querySelectorAll(".filters select").forEach(s => s.value = "");
+  document.querySelectorAll(".filters input").forEach(i => i.value = "");
+
+  applyFilters();
+};
+
+// -------------------------------------------------------
+
+// -------------------------------------------------------
+let searchTimeout;
+
+document.getElementById("searchInput")
+.addEventListener("input", () => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(applyFilters, 300);
+});
+
+
+  </script>
+
+
+
+<!-- ====================== footer =================================== -->
+<footer class="footer">
+
+  <div class="footer-container">
+
+    <!-- RIGHT SIDE -->
+    <div class="footer-right">
+      <h2 class="footer-logo">نقطة وصل</h2>
+      <p class="footer-desc">
+        منصة رقمية لعرض العقارات تربط المالك والباحث مباشرة دون وسطاء،
+        وتوفر تجربة موثوقة قائمة على التحقق، الشفافية، وجودة المحتوى.
+      </p>
+    </div>
+
+    <!-- LEFT SIDE -->
+    <div class="footer-left">
+
+      <!-- COLUMN 1 -->
+      <div class="footer-col">
+        <h4>الدعم</h4>
+        <a href="mailto:nuqtatwasl.2026@outlook.com">تواصل معنا</a>
+        <a href="#">الاسئلة الشائعة</a>
+        <a href="#">الشروط والاحكام</a>
+      </div>
+
+      <!-- COLUMN 2 -->
+      <div class="footer-col">
+        <h4>روابط سريعة</h4>
+        <a href="index.html">الرئيسية</a>
+        <a href="map.html">الخريطة</a>
+        <a href="#" id="accountLink">الحساب</a>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- BOTTOM -->
+  <div class="footer-bottom">
+    © 2026 Qassim - نقطة وصل
+  </div>
+
+</footer>
+
+</body>
+
+
+<script src="/backend/fav.js"></script>
+
+
+<script src="/backend/notification.js"></script>
+
+
+<!-- Authentication step -->
+<script src="/backend/auth.js"></script>
+
+
+
+</html>
+

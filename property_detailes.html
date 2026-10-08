@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>تفاصيل العقار | نقطة وصل</title>
+
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+
+  <!-- Leaflet -->
+  <link rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<style>
+
+/* =====================================================
+   GENERAL
+===================================================== */
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  font-family:"Tajawal", sans-serif;
+  background:#f7f7f7;
+  color:#222;
+}
+
+.container{
+  width:min(1300px, 92%);
+  margin:auto;
+}
+
+/* =====================================================
+   HEADER
+===================================================== */
+
+.header{
+  background:#fff;
+  border-bottom:1px solid #eee;
+  padding:20px 0;
+}
+
+.header-content{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.logo{
+  font-size:24px;
+  font-weight:800;
+}
+
+.back-link{
+  text-decoration:none;
+  color:#333;
+  font-weight:600;
+}
+
+/* =====================================================
+   PAGE
+===================================================== */
+
+.property-page{
+  padding:40px 0;
+}
+
+.property-layout{
+  display:grid;
+  grid-template-columns:1.2fr 1fr;
+  gap:30px;
+}
+
+/* =====================================================
+   RIGHT SIDE
+===================================================== */
+
+.gallery img,
+.gallery video{
+  width:100%;
+  border-radius:20px;
+}
+
+.main-image{
+  height:300px;
+  object-fit:cover;
+}
+
+.thumbs{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:15px;
+  margin-top:15px;
+}
+
+.thumb{
+  height:140px;
+  object-fit:cover;
+  cursor:pointer;
+}
+
+.video-box video{
+  height:140px;
+  object-fit:cover;
+}
+
+.map-box{
+  margin-top:20px;
+  background:#fff;
+  border-radius:20px;
+  overflow:hidden;
+  box-shadow:0 4px 15px rgba(0,0,0,.05);
+}
+
+#map{
+  height:280px;
+}
+
+/* =====================================================
+   LEFT SIDE
+===================================================== */
+
+.property-info{
+  background:#fff;
+  border-radius:24px;
+  padding:30px;
+  box-shadow:0 4px 15px rgba(0,0,0,.05);
+}
+
+.price{
+  font-size:42px;
+  font-weight:800;
+  color:#c9a57b;
+}
+
+.location{
+  margin-top:10px;
+  color:#666;
+}
+
+.badges{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:25px;
+}
+
+.badge{
+  background:#f2ede7;
+  padding:10px 16px;
+  border-radius:12px;
+  font-weight:600;
+}
+
+.section-title{
+  margin-top:35px;
+  margin-bottom:15px;
+  font-size:22px;
+  font-weight:800;
+}
+
+.description{
+  line-height:2;
+  color:#555;
+}
+
+/* =====================================================
+   DETAILS BOX
+===================================================== */
+
+.details-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:15px;
+}
+
+.detail-card{
+  background:#fafafa;
+  border:1px solid #eee;
+  border-radius:16px;
+  padding:18px;
+}
+
+.detail-label{
+  color:#888;
+  font-size:14px;
+}
+
+.detail-value{
+  margin-top:8px;
+  font-weight:700;
+}
+
+/* =====================================================
+   ACTIONS
+===================================================== */
+
+.actions{
+  display:flex;
+  gap:15px;
+  margin-top:35px;
+}
+
+.btn{
+  flex:1;
+  border:none;
+  border-radius:14px;
+  padding:15px;
+  cursor:pointer;
+  font-size:16px;
+  font-weight:700;
+  transition:.25s;
+}
+
+.btn-edit{
+  background:#c9a57b;
+  color:#fff;
+}
+
+.btn-delete{
+  background:#e25757;
+  color:#fff;
+}
+
+.btn:hover{
+  transform:translateY(-2px);
+}
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media(max-width:980px){
+
+  .property-layout{
+    grid-template-columns:1fr;
+  }
+
+  .main-image{
+    height:320px;
+  }
+}
+
+@media(max-width:600px){
+
+  .thumbs{
+    grid-template-columns:1fr;
+  }
+
+  .details-grid{
+    grid-template-columns:1fr;
+  }
+
+  .actions{
+    flex-direction:column;
+  }
+
+  .price{
+    font-size:34px;
+  }
+}
+
+#propertyFeatures{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:10px;
+}
+
+#propertyFeatures{
+  display:flex;
+  flex-wrap:wrap;
+
+  gap:12px;
+
+  margin-top:16px;
+
+  font-size:16px;
+  font-weight:400;
+
+  color:#444;
+}
+
+#propertyFeatures span{
+  white-space:nowrap;
+}
+
+/* =========================================
+   DELETE MODAL
+========================================= */
+
+.delete-modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.35);
+
+  display:none;
+  justify-content:center;
+  align-items:center;
+
+  z-index:9999;
+}
+
+.delete-modal.active{
+  display:flex;
+}
+
+.delete-box{
+  width:min(360px,90%);
+  background:#fff;
+
+  border-radius:20px;
+
+  padding:28px 22px;
+
+  text-align:center;
+
+  animation:popup .25s ease;
+}
+
+.delete-box h2{
+  font-size:26px;
+  margin-bottom:18px;
+  font-weight:800;
+  color:#111;
+}
+
+.delete-box p{
+  font-size:16px;
+  color:#666;
+  margin-bottom:35px;
+}
+
+.delete-actions{
+  display:flex;
+  justify-content:center;
+  gap:18px;
+}
+
+.modal-btn{
+  border:none;
+   padding:12px 24px;
+   border-radius:14px;
+
+   font-size:16px;
+  font-weight:700;
+
+  cursor:pointer;
+  transition:.25s;
+}
+
+.modal-btn:hover{
+  transform:translateY(-2px);
+}
+
+.cancel-btn{
+  background:#f3f3f3;
+  color:#222;
+}
+
+.confirm-btn{
+  background:#c79a68;
+  color:#fff;
+}
+
+@keyframes popup{
+
+  from{
+    transform:scale(.9);
+    opacity:0;
+  }
+
+  to{
+    transform:scale(1);
+    opacity:1;
+  }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- =====================================================
+     HEADER
+===================================================== -->
+
+<header class="header">
+
+  <div class="container header-content">
+
+    <div class="logo">
+      نقطة وصل
+    </div>
+
+    <a href="owner_ads.html" class="back-link">
+      ← العودة لإعلاناتي
+    </a>
+
+  </div>
+
+</header>
+
+<!-- =====================================================
+     PAGE
+===================================================== -->
+
+<section class="property-page">
+
+  <div class="container">
+
+    <div class="property-layout">
+
+      <!-- ==============================================
+           RIGHT SIDE
+      =============================================== -->
+
+      <div>
+
+        <!-- الصور -->
+
+        <div class="gallery">
+
+          <div id="mainMedia"></div>
+          <div class="thumbs" id="thumbsContainer"></div>
+
+        </div>
+
+        <!-- الخريطة -->
+
+        <div class="map-box">
+
+          <div id="map"></div>
+
+        </div>
+
+      </div>
+
+      <!-- ==============================================
+           LEFT SIDE
+      =============================================== -->
+
+      <div class="property-info">
+
+        <!-- السعر -->
+
+        <div class="price" id="propertyPrice"></div>
+
+        <!-- الموقع -->
+
+        <div class="location" id="propertyLocation"></div>
+
+        <!-- التفاصيل السريعة -->
+
+        <div class="badges" id="propertyBadges"></div>
+
+        <!-- الوصف -->
+
+        <h2 class="section-title">
+          وصف العقار
+        </h2>
+
+        <p class="description" id="propertyDescription"></p>
+
+        <h2 class="section-title">
+ المزايا
+</h2>
+
+<div id="propertyFeatures"></div>
+
+        <!-- معلومات العقار -->
+
+        <h2 class="section-title">
+          معلومات العقار
+        </h2>
+
+        <div class="details-grid">
+
+          <div class="detail-card">
+            <div class="detail-label">نوع العقار</div>
+            <div class="detail-value" id="propertyType"></div>
+          </div>
+
+          <div class="detail-card">
+            <div class="detail-label">نوع العرض</div>
+            <div class="detail-value" id="listingType"></div>
+          </div>
+
+          <div class="detail-card">
+            <div class="detail-label">واجهة العقار</div>
+            <div class="detail-value" id="facade"></div>
+          </div>
+
+          <div class="detail-card">
+            <div class="detail-label">عمر العقار</div>
+            <div class="detail-value" id="propertyAge"></div>
+          </div>
+
+          <div class="detail-card">
+            <div class="detail-label">رقم الإعلان</div>
+            <div class="detail-value" id="adNumber"></div>
+          </div>
+
+          <div class="detail-card">
+            <div class="detail-label">تاريخ النشر</div>
+            <div class="detail-value" id="createdAt"></div>
+          </div>
+
+        </div>
+        <div class="actions">
+
+  <button
+    class="btn btn-edit"
+    id="editBtn"
+  >
+    تعديل العقار
+  </button>
+
+  <button
+    class="btn btn-delete"
+    id="deleteBtn"
+  >
+    حذف العقار
+  </button>
+
+</div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+<!-- =========================================
+     DELETE MODAL
+========================================= -->
+
+<div class="delete-modal" id="deleteModal">
+
+  <div class="delete-box">
+
+    <h2>تأكيد الحذف</h2>
+
+    <p>
+      هل أنت متأكد أنك تريد حذف العقار؟
+    </p>
+
+    <div class="delete-actions">
+
+      <button
+        class="modal-btn confirm-btn"
+        id="confirmDelete"
+      >
+        نعم، حذف
+      </button>
+
+      <button
+        class="modal-btn cancel-btn"
+        id="cancelDelete"
+      >
+        إلغاء
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+<!-- =====================================================
+     LEAFLET JS
+===================================================== -->
+
+<div class="delete-modal" id="editModal">
+
+  <div class="delete-box">
+
+    <h2>تنبيه</h2>
+
+    <p>
+      سوف تتوفر قريبًا هذه الخدمة
+    </p>
+
+    <div class="delete-actions">
+
+      <button
+        class="modal-btn confirm-btn"
+        id="closeEditModal"
+      >
+        حسنًا
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+
+/* =====================================================
+   CHANGE IMAGE
+===================================================== */
+
+function changeMedia(type, src){
+
+  const mainContainer =
+    document.getElementById("mainMedia");
+
+  if(type === "image"){
+
+    mainContainer.innerHTML = `
+      <img
+        id="mainImage"
+        class="main-image"
+        src="${src}"
+      >
+    `;
+
+  }
+
+  else if(type === "video"){
+
+    mainContainer.innerHTML = `
+      <video
+        class="main-image"
+        controls
+        autoplay
+      >
+
+        <source
+          src="${src}"
+          type="video/mp4"
+        >
+
+      </video>
+    `;
+  }
+}
+
+/* =====================================================
+   MAP
+===================================================== */
+
+const map = L.map('map').setView([26.37, 43.95], 13);
+
+L.tileLayer(
+  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  {
+    attribution:'&copy; OpenStreetMap contributors'
+  }
+).addTo(map);
+
+/* =====================================================
+   PROPERTY ID
+===================================================== */
+
+const params =
+  new URLSearchParams(window.location.search);
+
+const propertyId = params.get("id");
+
+
+// ================= EDIT =================
+
+const editBtn =
+  document.getElementById("editBtn");
+
+const editModal =
+  document.getElementById("editModal");
+
+const closeEditModal =
+  document.getElementById("closeEditModal");
+
+// فتح البوب اب
+
+editBtn.onclick = () => {
+
+  editModal.classList.add("active");
+
+};
+
+// إغلاق البوب اب
+
+closeEditModal.onclick = () => {
+
+  editModal.classList.remove("active");
+
+};
+// ================= DELETE =================
+
+const deleteModal =
+  document.getElementById("deleteModal");
+
+const deleteBtn =
+  document.getElementById("deleteBtn");
+
+const cancelDelete =
+  document.getElementById("cancelDelete");
+
+const confirmDelete =
+  document.getElementById("confirmDelete");
+
+// فتح النافذة
+
+deleteBtn.onclick = () => {
+
+  deleteModal.classList.add("active");
+
+};
+
+// إغلاق النافذة
+
+cancelDelete.onclick = () => {
+
+  deleteModal.classList.remove("active");
+
+};
+
+// حذف العقار
+
+confirmDelete.onclick = async () => {
+
+  try{
+
+    const res = await fetch(
+      `http://127.0.0.1:3001/api/properties/${propertyId}`,
+      {
+        method:"DELETE",
+        credentials:"include"
+      }
+    );
+
+    if(!res.ok){
+      throw new Error();
+    }
+
+    alert("تم حذف العقار");
+
+    window.location.href =
+      "owner_ads.html";
+
+  }
+
+  catch(err){
+
+    alert("فشل حذف العقار");
+
+  }
+
+};
+/* =====================================================
+   LOAD PROPERTY
+===================================================== */
+
+async function loadProperty(){
+
+  try{
+
+    // ================= PROPERTY =================
+
+    const res = await fetch(`http://127.0.0.1:3001/api/properties/${propertyId}/details`)
+
+    const property = await res.json();
+
+    console.log(property);
+
+    console.log("FEATURES =", property.features);
+
+    // ================= BASIC INFO =================
+
+    document.getElementById("propertyPrice")
+    .textContent =
+      Number(property.price).toLocaleString()
+      + " ريال";
+
+    document.getElementById("propertyLocation")
+    .textContent =
+      `${property.city} - ${property.district}`;
+
+    document.getElementById("propertyDescription")
+    .textContent =
+      property.description || "لا يوجد وصف";
+
+const featureMap = {
+  "Parking":"مواقف سيارات",
+  "Elevator":"مصعد",
+  "Electricity":"كهرباء",
+  "Water":"ماء",
+  "Driver Room":"غرفة سائق",
+  "Maid Room":"غرفة خادمة",
+  "Garden":"حديقة",
+  "External Annex":"ملحق خارجي",
+  "Storage":"مستودع",
+  "Mosque Nearby":"مسجد قريب",
+  "Schools Nearby":"مدارس قريبة",
+  "Hospital Nearby":"مستشفى قريب",
+  "Security Cameras":"كاميرات مراقبة"
+};
+
+const featuresContainer =
+  document.getElementById("propertyFeatures");
+
+if(property.features){
+
+  const featuresArray =
+    property.features.split(" - ");
+
+  featuresContainer.innerHTML =
+  featuresArray.map(feature => `
+    <span>
+      • ${featureMap[feature] || feature}
+    </span>
+  `).join("");
+
+}
+
+else{
+
+  featuresContainer.innerHTML =
+    "لا توجد مميزات";
+
+}
+
+    // ================= BADGES =================
+
+    document.getElementById("propertyBadges")
+    .innerHTML = `
+      <div class="badge">
+        🛏 ${property.bedrooms || 0} غرف
+      </div>
+
+      <div class="badge">
+        🛁 ${property.bathrooms || 0} حمامات
+      </div>
+
+      <div class="badge">
+        📐 ${property.area_space || 0} م²
+      </div>
+
+      <div class="badge">
+        🏡 ${property.property_type || "-"}
+      </div>
+    `;
+
+    // ================= DETAILS =================
+
+    document.getElementById("propertyType")
+    .textContent =
+      property.property_type || "-";
+
+    document.getElementById("listingType")
+    .textContent =
+      property.listing_type || "-";
+
+    document.getElementById("facade")
+    .textContent =
+      property.facade || "-";
+
+    document.getElementById("propertyAge")
+    .textContent =
+      property.property_age || "-";
+
+    document.getElementById("adNumber")
+    .textContent =
+      property.id || "-";
+
+    document.getElementById("createdAt")
+    .textContent =
+      new Date(property.created_at)
+      .toLocaleDateString("ar-SA");
+
+    // ================= MAP =================
+
+    const lat = parseFloat(property.lat);
+    const lng = parseFloat(property.lng);
+
+    if(!isNaN(lat) && !isNaN(lng)){
+
+      map.setView([lat, lng], 14);
+
+      L.marker([lat, lng])
+      .addTo(map)
+      .bindPopup(property.title)
+      .openPopup();
+
+    }
+
+    // ================= PHOTOS =================
+
+    const photoRes = await fetch(
+      `http://127.0.0.1:3001/api/properties/${property.id}/photos`
+    );
+
+    const photos = await photoRes.json();
+
+    const thumbsContainer =
+      document.getElementById("thumbsContainer");
+
+    thumbsContainer.innerHTML = "";
+
+    if(photos.length > 0){
+
+      const firstPhoto =
+        `http://127.0.0.1:3001${photos[0].photo_path}`;
+
+      changeMedia("image", firstPhoto);
+
+      photos.forEach(photo => {
+
+        const imageUrl =
+          `http://127.0.0.1:3001${photo.photo_path}`;
+
+        thumbsContainer.innerHTML += `
+          <img
+            class="thumb"
+            src="${imageUrl}"
+            onclick="changeMedia('image','${imageUrl}')"
+          >
+        `;  }); }
+
+
+// ================= VIDEO =================
+
+if(property.video_url){
+
+  thumbsContainer.innerHTML += `
+
+  <video
+    class="thumb"
+    onclick="changeMedia(
+      'video',
+      'http://127.0.0.1:3001${property.video_url}'
+    )"
+  >
+
+    <source
+      src="http://127.0.0.1:3001${property.video_url}"
+      type="video/mp4"
+    >
+
+  </video>
+
+`;
+}
+    
+  }
+
+  catch(err){
+
+    console.log(err);
+
+  }
+
+}
+
+loadProperty();
+
+</script>
+<!-- =========================================
+     EDIT MODAL
+========================================= -->
+
+
+</body>
+</html>

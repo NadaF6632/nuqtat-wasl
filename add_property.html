@@ -1,0 +1,1897 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>إضافة عقار</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<style>
+:root{
+  --primary:#c9a57b;
+  --primary-dark:#b89368;
+  --primary-light:#e8d9cc;
+  --bg:#f8f6f3;
+  --card:#ffffff;
+  --border:#e5e5e5;
+  --text:#2d3748;
+  --muted:#718096;
+  --success:#48bb78;
+  --error:#f56565;
+}
+
+/* ===== GLOBAL ===== */
+body{
+  font-family: "Tajawal", Arial, sans-serif;
+  background: linear-gradient(135deg, #f5f0eb 0%, #ede5dc 100%);
+  margin:0;
+  padding: 20px;
+  min-height: 100vh;
+}
+
+/* ===== CONTAINER ===== */
+.form-container{
+  width:90%;
+  max-width:1000px;
+  margin:20px auto;
+  background: var(--card);
+  padding:40px;
+  border-radius:32px;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.form-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 200px;
+  height: 200px;
+  background: linear-gradient(135deg, var(--primary-light) 0%, transparent 100%);
+  border-radius: 0 0 0 100%;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* ===== TITLES ===== */
+h2{
+  text-align:center;
+  margin-bottom:30px;
+  color: var(--text);
+  font-size: 28px;
+  font-weight: 800;
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+h2::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: var(--primary);
+  border-radius: 3px;
+}
+
+h3{
+  margin-bottom:20px;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+h3::before {
+  content: '';
+  width: 4px;
+  height: 24px;
+  background: var(--primary);
+  border-radius: 4px;
+}
+
+/* ===== PROGRESS BAR - MODERN ===== */
+.progress-bar{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:45px;
+  position:relative;
+  background: #f1f1f1;
+  border-radius: 60px;
+  padding: 6px;
+}
+
+.progress-bar::before{
+  display: none;
+}
+
+.progress-step{
+  flex: 1;
+  text-align: center;
+  padding: 12px 8px;
+  background: transparent;
+  border-radius: 50px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 1;
+  color: #aaa;
+  transition: all 0.3s ease;
+  cursor: default;
+  position: relative;
+}
+
+.progress-step.active{
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(201,165,123,0.3);
+}
+
+.progress-step.completed {
+  background: var(--success);
+  color: white;
+}
+
+/* ===== STEPS ===== */
+.step{ 
+  display:none; 
+  animation: fadeIn 0.4s ease-out; 
+}
+.step.active{ 
+  display: block; 
+}
+
+@keyframes fadeIn{
+  from{
+    opacity:0;
+    transform: translateY(15px);
+  }
+  to{
+    opacity:1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== INPUTS - MODERN ===== */
+.input-group {
+  position: relative;
+  margin-bottom: 5px;
+}
+
+input:not([type="checkbox"]),
+select,
+textarea{
+  width:100%;
+  height:52px;
+  padding:0 16px;
+  margin:8px 0 16px 0;
+  border-radius:14px;
+  border:2px solid #edf2f7;
+  font-size:14px;
+  background:#fff;
+  box-sizing:border-box;
+  transition: all 0.2s ease;
+  font-family: "Tajawal", Arial, sans-serif;
+}
+
+input:focus, select:focus, textarea:focus{
+  border-color:var(--primary);
+  background:#fff;
+  box-shadow:0 0 0 4px rgba(201,165,123,0.15);
+  outline: none;
+}
+
+textarea{
+  height:120px;
+  padding:14px 16px;
+  resize:vertical;
+  line-height: 1.6;
+}
+
+select{
+  appearance:none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23718096' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: left 16px center;
+  background-size: 16px;
+}
+
+/* Labels */
+label{
+  display:block;
+  margin-top:8px;
+  font-size:13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* Label group - for label + help icon */
+/* Label group styling */
+.label-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.label-group label {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.help-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  position: relative;
+  margin-bottom: 0;
+  float: none;
+}
+
+/* Clear fix for input groups */
+.input-group::after {
+  content: '';
+  display: table;
+  clear: both;
+}
+
+/* Inputs take full width */
+.input-group input, 
+.input-group textarea,
+.input-group select {
+  width: 100%;
+  float: none;
+}
+
+/* ===== HELP ICON STYLES ===== */
+.help-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: bold;
+  margin-right: 8px;
+  cursor: pointer;
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.help-icon:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.help-tooltip {
+  visibility: hidden;
+  width: 260px;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 8px;
+  padding: 8px 12px;
+  position: absolute;
+  z-index: 100;
+  bottom: 125%;
+  right: 0;
+  font-size: 12px;
+  font-weight: normal;
+  white-space: normal;
+  line-height: 1.5;
+}
+
+/* Arrow for tooltip */
+.help-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  right: 15px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #333 transparent transparent transparent;
+}
+
+/* For help icons near the right edge - show tooltip on the left */
+.help-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: bold;
+  margin-right: 8px;
+  cursor: pointer;
+  position: relative;
+  margin-bottom: 16px;
+  float: right;
+  clear: both;
+}
+
+/* Clear fix for input groups */
+.input-group::after {
+  content: '';
+  display: table;
+  clear: both;
+}
+
+.input-group input, 
+.input-group textarea,
+.input-group select {
+  width: calc(100% - 30px);
+  float: right;
+}
+
+.help-icon {
+  margin-top: 18px;
+  float: right;
+}
+
+.help-icon:hover .help-tooltip {
+  visibility: visible;
+}
+
+/* ===== GUIDELINES STEP ===== */
+.guidelines-step {
+  background: linear-gradient(135deg, #fefaf5, #fdf6ed);
+  border-radius: 24px;
+  padding: 24px;
+  margin-bottom: 20px;
+  border: 1px solid #f0e6d8;
+}
+
+.guidelines-step h4 {
+  color: var(--primary-dark);
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.guidelines-list {
+  list-style: none;
+  padding: 0;
+}
+
+.guidelines-list li {
+  padding: 10px 0;
+  border-bottom: 1px solid #f0e6d8;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+}
+
+.guidelines-list li:last-child {
+  border-bottom: none;
+}
+
+.guideline-icon {
+  font-size: 20px;
+}
+
+/* ===== TERMS MODAL ===== */
+.terms-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.terms-modal-content {
+  background: white;
+  width: 550px;
+  max-width: 90%;
+  border-radius: 24px;
+  padding: 28px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.terms-modal-content h3 {
+  margin-bottom: 15px;
+}
+
+.terms-text {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #333;
+  margin: 20px 0;
+}
+
+.terms-text p {
+  margin-bottom: 12px;
+}
+
+.terms-text strong {
+  color: var(--primary-dark);
+}
+
+.terms-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.terms-accept {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.terms-cancel {
+  background: #e2e8f0;
+  color: #333;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* ===== FEATURES GRID ===== */
+.features{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.features label{
+  background: #fafbfc;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 2px solid #edf2f7;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+}
+
+.features label:hover{
+  background: #fff;
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.features input[type="checkbox"]{
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+/* ===== BUTTONS ===== */
+.buttons{
+  display:flex;
+  gap:15px;
+  align-items:center;
+  justify-content: space-between;
+  margin-top: 30px;
+}
+
+.buttons button{
+  flex:1;
+  height:48px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap: 8px;
+  font-size: 15px;
+}
+
+button{
+  padding:12px 28px;
+  border:none;
+  border-radius:14px;
+  cursor:pointer;
+  font-weight:700;
+  transition: all 0.2s ease;
+  font-family: "Tajawal", Arial, sans-serif;
+}
+
+.next, #saveBtn{
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color:#fff;
+  box-shadow: 0 4px 12px rgba(201,165,123,0.3);
+}
+
+.next:hover, #saveBtn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 20px rgba(201,165,123,0.4);
+}
+
+.prev{
+  background:#f1f5f9;
+  color: var(--text);
+}
+
+.prev:hover{
+  background:#e2e8f0;
+  transform:translateY(-2px);
+}
+
+/* ===== MAP ===== */
+#map{
+  border-radius:20px;
+  overflow:hidden;
+  margin:15px 0;
+  border: 2px solid #edf2f7;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* Location button */
+button[onclick="goToMyLocation()"] {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  margin-top: 10px;
+  width: auto;
+  padding: 10px 20px;
+  font-size: 13px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+/* ===== UPLOAD BOXES ===== */
+.upload-box{
+  border: 2px dashed #e2e8f0;
+  padding: 25px;
+  border-radius: 20px;
+  text-align:center;
+  background: #fafbfc;
+  transition: all 0.3s ease;
+  margin-bottom: 24px;
+  cursor: pointer;
+}
+
+.upload-box:hover{
+  border-color: var(--primary);
+  background: #fffcf8;
+  transform: translateY(-2px);
+}
+
+.upload-box label{
+  display:block;
+  margin-bottom:12px;
+  font-weight:700;
+  color: var(--text);
+  font-size: 15px;
+}
+
+.upload-box label span {
+  font-size: 12px;
+}
+
+.settings-hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 10px;
+}
+
+/* ===== PREVIEW BOX ===== */
+#previewBox {
+  background: #fafbfc;
+  padding: 24px;
+  border-radius: 20px;
+  border: 1px solid #edf2f7;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+#previewBox hr {
+  margin: 15px 0;
+  border: none;
+  border-top: 1px solid #edf2f7;
+}
+
+/* ===== TERMS CHECKBOX ===== */
+#termsCheck {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+/* ===== MEDIA PREVIEW ===== */
+.media-preview{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-top:15px;
+}
+
+.media-preview > div {
+  position: relative;
+}
+
+.media-preview img,
+.media-preview video{
+  width:100px;
+  height:80px;
+  object-fit:cover;
+  border-radius:12px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.1);
+  transition:0.2s;
+}
+
+.media-preview img:hover,
+.media-preview video:hover{
+  transform:scale(1.05);
+}
+
+/* Remove button */
+.remove-btn{
+  position:absolute;
+  top:-10px;
+  right:-10px;
+  width:24px;
+  height:24px;
+  min-width:24px;
+  min-height:24px;
+  border:none;
+  border-radius:50%;
+  background: var(--error);
+  color:#fff;
+  font-size:14px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:0.2s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.remove-btn:hover{
+  transform: scale(1.1);
+  background: #e53e3e;
+}
+
+/* Error styles - clean and under the field */
+.input-error {
+  border-color: var(--error) !important;
+  background: #fff5f5 !important;
+}
+
+.error-text {
+  color: var(--error);
+  font-size: 12px;
+  margin-top: -8px;
+  margin-bottom: 12px;
+  display: block;
+  padding-right: 16px;
+  font-weight: 500;
+}
+
+/* Input group spacing */
+.input-group {
+  margin-bottom: 20px;
+}
+
+.input-group input,
+.input-group textarea,
+.input-group select {
+  width: 100%;
+}
+
+/* Location text */
+#locationText {
+  background: #f0fdf4;
+  padding: 12px 16px;
+  border-radius: 14px;
+  border-right: 4px solid var(--success);
+  font-weight: 500;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px){
+  .form-container {
+    padding: 24px;
+    width: 95%;
+  }
+  
+  .progress-step {
+    font-size: 10px;
+    padding: 8px 4px;
+  }
+  
+  .features {
+    grid-template-columns: 1fr;
+  }
+  
+  .buttons {
+    flex-direction: column;
+  }
+  
+  .buttons button {
+    width: 100%;
+  }
+  
+  h2 {
+    font-size: 22px;
+  }
+  
+  h3 {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 480px){
+  .progress-step span {
+    display: none;
+  }
+  
+  .progress-step::before {
+    content: "●";
+    font-size: 12px;
+  }
+}
+
+/* Back to Ads Button */
+.back-to-ads-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  padding: 8px 16px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  border: 1px solid var(--primary);
+}
+
+.back-to-ads-btn:hover {
+  background: var(--primary);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(201,165,123,0.3);
+}
+
+</style>
+</head>
+
+<body>
+
+  <div style="max-width: 1000px; margin: 0 auto 10px auto; display: flex; justify-content: flex-end;">
+  <a href="owner_ads.html" class="back-to-ads-btn">← العودة للإعلانات</a>
+  </div>
+
+<div class="form-container">
+    <h2>إضافة عقار</h2>
+
+<!-- PROGRESS -->
+<div class="progress-bar">
+  <div class="progress-step active"> إرشادات</div>
+  <div class="progress-step">المعلومات</div>
+  <div class="progress-step">الموقع</div>
+  <div class="progress-step">التفاصيل</div>
+  <div class="progress-step">المزايا</div>
+  <div class="progress-step">الوسائط</div>
+  <div class="progress-step">المعاينة</div>
+</div>
+
+<form id="propertyForm" enctype="multipart/form-data">
+
+  <!-- STEP 0 - GUIDELINES -->
+  <div class="step active">
+    <h3>إرشادات مهمة</h3>
+    <div class="guidelines-step">
+      <h4>قبل إضافة عقارك، يرجى قراءة الإرشادات التالية:</h4>
+      <ul class="guidelines-list">
+        <li>صور عالية الجودة وواضحة للعقار من الداخل والخارج</li>
+        <li>فيديو يظهر جميع زوايا العقار بشكل واقعي</li>
+        <li>مخطط هندسي (اختياري) لتوضيح توزيع الغرف</li>
+        <li>مستند ملكية العقار (صك) لإثبات الملكية - يظهر فقط للمشرف</li>
+        <li>تحديد موقع العقار بدقة على الخريطة</li>
+        <li>سعر واقعي ومناسب مقارنة بالعقارات المشابهة</li>
+        <li>وصف دقيق للعقار دون مبالغة</li>
+      </ul>
+      <div style="margin-top: 15px; padding: 12px; background: #fef3c7; border-radius: 12px;">
+        <strong>⚠️ ملاحظة:</strong> بعد إضافة العقار، سيتم مراجعته من قبل المشرف. في حال القبول، يمكنك الدفع لنشر الإعلان.
+      </div>
+    </div>
+    <div class="buttons">
+      <span></span>
+      <button type="button" class="next">التالي</button>
+    </div>
+  </div>
+
+  <!-- STEP 1 - BASIC INFO -->
+  <div class="step">
+    <h3>المعلومات الأساسية</h3>
+
+    <div class="input-group">
+    <div class="label-group">
+      <label>عنوان العقار</label>
+      <span class="help-icon">?<span class="help-tooltip"> اكتب عنواناً واضحاً يصف العقار (مثال: فيلا للبيع في حي النهضة)</span></span>
+    </div>
+    <input name="title" placeholder="عنوان العقار" required>
+  </div>
+
+    <div class="input-group">
+    <div class="label-group">
+      <label>تفاصيل العقار</label>
+      <span class="help-icon">?<span class="help-tooltip"> اكتب وصفاً تفصيلياً للعقار (المساحة، عدد الغرف، الخدمات القريبة، المميزات)</span></span>
+    </div>
+    <textarea name="description" placeholder="الوصف"></textarea>
+  </div>
+
+  <div class="input-group">
+    <div class="label-group">
+      <label>سعر العقار</label>
+      <span class="help-icon">?<span class="help-tooltip"> أدخل السعر بالريال السعودي. للعقارات المعروضة للإيجار، أدخل السعر السنوي</span></span>
+    </div>
+    <input name="price" type="number" placeholder="السعر">
+  </div>
+
+    <div class="buttons">
+      <span></span>
+      <button type="button" class="prev">السابق</button>
+      <button type="button" class="next">التالي</button>
+    </div>
+  </div>
+
+  <!-- STEP 2 - LOCATION -->
+  <div class="step">
+    <h3>الموقع</h3>
+
+    <label>اختر المدينة</label>
+    <select id="citySelect">
+      <option disabled selected>اختر مدينة</option>
+      <option value="buraydah">بريدة</option>
+      <option value="riyadh_alkhabra">رياض الخبراء</option>
+      <option value="riyadh">الرياض</option>
+      <option value="jeddah">جدة</option>
+      <option value="makkah">مكة</option>
+      <option value="madinah">المدينة المنورة</option>
+      <option value="dammam">الدمام</option>
+      <option value="khobar">الخبر</option>
+      <option value="dhahran">الظهران</option>
+      <option value="onizah">عنيزة</option>
+      <option value="hail">حائل</option>
+      <option value="tabuk">تبوك</option>
+      <option value="abha">أبها</option>
+      <option value="khamis">خميس مشيط</option>
+      <option value="jazan">جازان</option>
+      <option value="najran">نجران</option>
+      <option value="taif">الطائف</option>
+      <option value="yanbu">ينبع</option>
+      <option value="jubail">الجبيل</option>
+      <option value="ahsaa">الأحساء</option>
+      <option value="arar">عرعر</option>
+      <option value="sakaka">سكاكا</option>
+      <option value="qurayyat">القريات</option>
+    </select>
+
+    <div id="map" style="height:300px; border-radius:12px;"></div>
+
+    <input name="lat" id="lat" hidden>
+    <input name="lng" id="lng" hidden>
+    <input name="city" id="city" hidden>
+    <input name="district" id="district" hidden>
+    <input name="neighborhood" id="neighborhood" hidden>
+
+    <p id="locationText" style="margin-top:10px; font-weight:bold; color:#444;">
+      📍 لم يتم اختيار موقع بعد
+    </p>
+    <button type="button" onclick="goToMyLocation()">📍 موقعي الحالي</button>
+
+    <div class="buttons">
+      <button type="button" class="prev">السابق</button>
+      <button type="button" class="next">التالي</button>
+    </div>
+  </div>
+
+  <!-- STEP 3 - PROPERTY DETAILS -->
+<div class="step">
+  <h3>تفاصيل العقار</h3>
+
+  <div class="input-group">
+    <div class="label-group">
+      <label>المساحة</label>
+      <span class="help-icon">?<span class="help-tooltip"> أدخل المساحة بالمتر المربع</span></span>
+    </div>
+    <input name="area_space" type="number" placeholder="المساحة">
+  </div>
+
+  <div class="input-group">
+    <div class="label-group">
+      <label>عدد الغرف</label>
+      <span class="help-icon">?<span class="help-tooltip"> للأراضي والمحلات التجارية: أدخل 0</span></span>
+    </div>
+    <input name="bedrooms" type="number" placeholder="عدد الغرف">
+  </div>
+
+  <div class="input-group">
+    <div class="label-group">
+      <label>عدد دورات المياه</label>
+      <span class="help-icon">?<span class="help-tooltip"> للأراضي والمحلات التجارية: أدخل 0</span></span>
+    </div>
+    <input name="bathrooms" type="number" placeholder="عدد دورات المياه">
+  </div>
+
+  <div class="input-group">
+    <label>نوع العقار</label>
+    <select name="property_type">
+      <option disabled selected>اختر نوع العقار</option>
+      <option value="فيلا">فيلا</option>
+      <option value="شقة">شقة</option>
+      <option value="استراحة">استراحة</option>
+      <option value="محل">محل</option>
+      <option value="مستودع">مستودع</option>
+      <option value="ارض">أرض</option>
+    </select>
+  </div>
+
+  <div class="input-group">
+    <label>نوع العرض</label>
+    <select name="listing_type">
+      <option disabled selected>اختر نوع العرض</option>
+      <option value="بيع">بيع</option>
+      <option value="ايجار">إيجار</option>
+    </select>
+  </div>
+
+  <div class="input-group">
+    <label>الاستخدام</label>
+    <select name="usage">
+      <option disabled selected>اختر الاستخدام</option>
+      <option value="سكني">سكني</option>
+      <option value="تجاري">تجاري</option>
+    </select>
+  </div>
+
+  <div class="input-group">
+    <label>الواجهة</label>
+    <select name="facade">
+      <option disabled selected>اختر الواجهة</option>
+      <option value="شمالي">شمالي</option>
+      <option value="جنوبي">جنوبي</option>
+      <option value="شرقي">شرقي</option>
+      <option value="غربي">غربي</option>
+    </select>
+  </div>
+
+  <div class="input-group">
+    <div class="label-group">
+      <label>عمر العقار</label>
+      <span class="help-icon">?<span class="help-tooltip"> أدخل عمر العقار بالسنوات</span></span>
+    </div>
+    <input name="property_age" type="number" placeholder="عمر العقار">
+  </div>
+
+  <div class="buttons">
+    <button type="button" class="prev">السابق</button>
+    <button type="button" class="next">التالي</button>
+  </div>
+</div>
+
+  <!-- STEP 4 - FEATURES -->
+  <div class="step">
+    <h3>المزايا</h3>
+
+    <div class="features">
+      <label><input type="checkbox" name="features" value="1"> مواقف سيارات</label>
+      <label><input type="checkbox" name="features" value="2"> مصعد</label>
+      <label><input type="checkbox" name="features" value="3"> كهرباء</label>
+      <label><input type="checkbox" name="features" value="4"> ماء</label>
+      <label><input type="checkbox" name="features" value="5"> غرفة سائق</label>
+      <label><input type="checkbox" name="features" value="6"> غرفة خادمة</label>
+      <label><input type="checkbox" name="features" value="7"> حديقة</label>
+      <label><input type="checkbox" name="features" value="8"> ملحق خارجي</label>
+      <label><input type="checkbox" name="features" value="9"> مستودع</label>
+      <label><input type="checkbox" name="features" value="10"> مسجد قريب</label>
+      <label><input type="checkbox" name="features" value="11"> مدرسة قريبة</label>
+      <label><input type="checkbox" name="features" value="12"> مستشفى قريب</label>
+      <label><input type="checkbox" name="features" value="13"> كاميرات مراقبة</label>
+    </div>
+
+    <div class="buttons">
+      <button type="button" class="prev">السابق</button>
+      <button type="button" class="next">التالي</button>
+    </div>
+  </div>
+
+  <!-- STEP 5 - MEDIA UPLOAD -->
+  <div class="step">
+    <h3>رفع الوسائط</h3>
+
+    <!-- Images Upload -->
+    <div class="upload-box">
+      <label> صور العقار <span style="color:red;">(مطلوب)</span></label>
+      <input type="file" name="images" multiple accept="image/*">
+      <div id="imagePreview" class="media-preview"></div>
+      <div class="settings-hint"> يمكنك رفع عدة صور للعقار (واجهة، غرف، مطبخ، حمامات، حديقة)</div>
+    </div>
+
+    <!-- Video Upload -->
+    <div class="upload-box">
+      <label> فيديو العقار <span style="color:red;">(مطلوب)</span></label>
+      <input type="file" name="video" accept="video/*" required>
+      <div id="videoPreview" class="media-preview"></div>
+      <div class="settings-hint"> فيديو يوضح جميع زوايا العقار بشكل واقعي</div>
+    </div>
+
+    <!-- Blueprint Upload -->
+    <div class="upload-box">
+      <label> المخطط الهندسي <span style="color:#888;">(اختياري)</span></label>
+      <input type="file" name="blueprint" accept="image/*,application/pdf">
+      <div id="blueprintPreview" class="media-preview"></div>
+      <div class="settings-hint"> يمكن رفع صورة أو PDF للمخطط الهندسي للعقار</div>
+    </div>
+
+    <!-- Legal Document Upload -->
+    <div class="upload-box">
+      <label> مستند ملكية العقار <span style="color:red;">(مطلوب - يظهر فقط للمشرف)</span></label>
+      <input type="file" name="legal_document" accept="image/*,application/pdf">
+      <div id="legalPreview" class="media-preview"></div>
+      <div class="settings-hint">🔒 هذا المستند يظهر فقط للمشرف وليس للباحثين (صورة الصك أو عقد الملكية)</div>
+    </div>
+
+    <div class="buttons">
+      <button type="button" class="prev">السابق</button>
+      <button type="button" class="next">التالي</button>
+    </div>
+  </div>
+
+  <!-- STEP 6 - PREVIEW -->
+  <div class="step">
+    <h3>معاينة الإعلان</h3>
+
+    <div id="previewBox" style="background:#f9f9f9; padding:20px; border-radius:12px;">
+    </div>
+
+    <div style="margin-top:15px;">
+      <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+        <input type="checkbox" id="termsCheck">
+        أوافق على <a href="#" id="termsLink" style="color:#b58b63;">الشروط والأحكام</a>
+      </label>
+      <div id="termsError" class="error-text" style="display:none; margin-top: 10px;">
+        يجب الموافقة على الشروط والأحكام
+      </div>
+    </div>
+
+    <div class="buttons">
+      <button type="button" class="prev">السابق</button>
+      <button type="submit" id="saveBtn">تأكيد وإضافة العقار</button>
+    </div>
+  </div>
+
+</form>
+</div>
+
+<!-- Terms Modal -->
+<div id="termsModal" class="terms-modal">
+  <div class="terms-modal-content">
+    <h3> الشروط والأحكام</h3>
+    <div class="terms-text">
+      <p><strong>أولاً: مسؤولية المالك:</strong></p>
+      <p>يتحمل المالك المسؤولية الكاملة عن جميع البيانات والمعلومات والصور والوثائق المرفقة في الإعلان. يجب أن تكون جميع المعلومات دقيقة وصحيحة ومطابقة للواقع.</p>
+      
+      <p><strong>ثانياً: المراجعة والنشر:</strong></p>
+      <p>يتم مراجعة جميع الإعلانات من قبل إدارة المنصة قبل النشر. تحتفظ الإدارة بالحق في رفض أي إعلان لا يتوافق مع المعايير أو يحتوي على معلومات غير دقيقة.</p>
+      
+      <p><strong>ثالثاً: الرسوم والدفع:</strong></p>
+      <p>بعد قبول الإعلان، يجب دفع رسوم النشر المحددة من قبل الإدارة لتفعيل الإعلان. الرسوم غير قابلة للاسترداد بعد النشر.</p>
+      
+      <p><strong>رابعاً: إلغاء الإعلان:</strong></p>
+      <p>للمالك الحق في إلغاء الإعلان في أي وقت. كما تحتفظ الإدارة بالحق في إيقاف أو حذف أي إعلان يخالف الشروط.</p>
+      
+      <p><strong>خامساً: الملكية الفكرية:</strong></p>
+      <p>تأكيد أن جميع الصور والمواد المرفقة هي ملك للمالك أو لديه الحق في استخدامها.</p>
+      
+      <p><strong>سادساً: التحديثات:</strong></p>
+      <p>يلتزم المالك بتحديث حالة العقار (مباع/مؤجر) فور إتمام الصفقة.</p>
+      
+      <p><strong>سابعاً: المسؤولية القانونية:</strong></p>
+      <p>المنصة وسيط فقط ولا تتحمل أي مسؤولية قانونية عن أي نزاع ينشأ بين المالك والمشتري/المستأجر. يتحمل المالك المسؤولية الكاملة عن دقة المعلومات.</p>
+    </div>
+    <div class="terms-buttons">
+      <button class="terms-cancel" id="closeTermsBtn">إلغاء</button>
+      <button class="terms-accept" id="acceptTermsBtn">موافق</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+//-------------------------------------------------------
+//VALIDATION
+//-------------------------------------------------------
+
+let currentStep = 0;
+const steps = document.querySelectorAll(".step");
+const progressSteps = document.querySelectorAll(".progress-step");
+
+function showStep(index){
+  steps.forEach(s => s.classList.remove("active"));
+  steps[index].classList.add("active");
+
+  progressSteps.forEach((step, i) => {
+    step.classList.toggle("active", i <= index);
+  });
+}
+
+document.querySelectorAll(".next").forEach(btn=>{
+  btn.onclick = () => {
+
+    console.log("NEXT CLICKED, STEP:", currentStep);
+
+    let valid = true;
+
+    // ================= STEP 1 (Basic Info) =================
+    if(currentStep === 1){
+      const titleInput = document.querySelector('input[name="title"]');
+      const priceInput = document.querySelector('input[name="price"]');
+
+      clearError(titleInput);
+      clearError(priceInput);
+
+      if(!titleInput.value.trim()){
+        showError(titleInput, "ادخل عنوان العقار");
+        valid = false;
+      }
+
+      if(!priceInput.value || priceInput.value <= 0){
+        showError(priceInput, "ادخل سعر صحيح");
+        valid = false;
+      }
+    }
+
+    // ================= STEP 2 (Location) =================
+    if(currentStep === 2){
+      const latInput = document.getElementById("lat");
+      const mapBox = document.getElementById("map");
+
+      if(!latInput.value){
+        mapBox.style.border = "2px solid red";
+        valid = false;
+      } else {
+        mapBox.style.border = "none";
+      }
+    }
+
+    // ================= STEP 5 (Media) =================
+    if(currentStep === 5){
+      const imagesInput = document.querySelector('input[name="images"]');
+      const videoInput = document.querySelector('input[name="video"]');
+      const legalInput = document.querySelector('input[name="legal_document"]');
+      
+      clearError(imagesInput);
+      clearError(videoInput);
+      clearError(legalInput);
+      
+      let hasError = false;
+      
+      if(imagesInput.files.length === 0){
+        showError(imagesInput, "ارفع صورة واحدة على الأقل");
+        hasError = true;
+      }
+      
+      if(!videoInput.files || videoInput.files.length === 0){
+        showError(videoInput, "فيديو العقار مطلوب");
+        hasError = true;
+      }
+      
+      if(!legalInput.files || legalInput.files.length === 0){
+        showError(legalInput, "مستند ملكية العقار مطلوب");
+        hasError = true;
+      }
+      
+      if(hasError){
+        valid = false;
+      }
+    }
+
+    // ⛔ STOP if invalid
+    if(!valid) return;
+
+    // ✅ GO NEXT
+    currentStep++;
+    showStep(currentStep);
+
+    if(currentStep === steps.length - 1){
+      generatePreview();
+    }
+
+    setTimeout(()=>{
+      if(typeof map !== "undefined") map.invalidateSize();
+    },200);
+  };
+});
+
+document.querySelectorAll(".prev").forEach(btn => {
+  btn.onclick = () => {
+    if (currentStep > 0) {
+      currentStep--;
+      showStep(currentStep);
+    }
+  };
+});
+
+//-------------------------------------------------------
+// Terms Modal Logic
+//-------------------------------------------------------
+const termsLink = document.getElementById('termsLink');
+const termsModal = document.getElementById('termsModal');
+const closeTermsBtn = document.getElementById('closeTermsBtn');
+const acceptTermsBtn = document.getElementById('acceptTermsBtn');
+const termsCheckbox = document.getElementById('termsCheck');
+const termsError = document.getElementById('termsError');
+
+if (termsLink) {
+  termsLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    termsModal.style.display = 'flex';
+  });
+}
+
+function closeTermsModal() {
+  termsModal.style.display = 'none';
+}
+
+if (closeTermsBtn) {
+  closeTermsBtn.addEventListener('click', closeTermsModal);
+}
+
+if (acceptTermsBtn) {
+  acceptTermsBtn.addEventListener('click', () => {
+    termsCheckbox.checked = true;
+    if (termsError) termsError.style.display = 'none';
+    closeTermsModal();
+  });
+}
+
+// Close modal when clicking outside
+window.addEventListener('click', (e) => {
+  if (e.target === termsModal) {
+    closeTermsModal();
+  }
+});
+
+//-------------------------------------------------------
+//MAP SEARCH
+//-------------------------------------------------------
+
+const cities = {
+  buraydah: [26.3260, 43.9750],
+  riyadh_alkhabra: [26.0533, 43.5414],
+  riyadh: [24.7136, 46.6753],
+  jeddah: [21.4858, 39.1925],
+  makkah: [21.3891, 39.8579],
+  madinah: [24.5247, 39.5692],
+  dammam: [26.4207, 50.0888],
+  khobar: [26.2794, 50.2080],
+  dhahran: [26.3084, 50.1355],
+  onizah: [26.0845, 43.9710],
+  hail: [27.5114, 41.7207],
+  tabuk: [28.3835, 36.5662],
+  abha: [18.2465, 42.5117],
+  khamis: [18.3037, 42.7331],
+  jazan: [16.8892, 42.5506],
+  najran: [17.4911, 44.1326],
+  taif: [21.2703, 40.4158],
+  yanbu: [24.0831, 38.0558],
+  jubail: [27.0000, 49.6666],
+  ahsaa: [25.3780, 49.5859],
+  arar: [30.9750, 41.0333],
+  sakaka: [29.9697, 40.2150],
+  qurayyat: [31.3333, 37.3333]
+};
+
+document.getElementById("citySelect").addEventListener("change", function(){
+  const selected = this.value;
+
+  if(cities[selected]){
+    map.setView(cities[selected], 13);
+  }
+
+  const cityMapping = {
+    "buraydah": { city: "القصيم", district: "بريدة" },
+    "riyadh_alkhabra": { city: "القصيم", district: "رياض الخبراء" },
+    "riyadh": { city: "الرياض", district: "الرياض" },
+    "jeddah": { city: "مكة", district: "جدة" },
+    "makkah": { city: "مكة", district: "مكة" },
+    "madinah": { city: "المدينة المنورة", district: "المدينة المنورة" },
+    "dammam": { city: "الشرقية", district: "الدمام" },
+    "khobar": { city: "الشرقية", district: "الخبر" },
+    "dhahran": { city: "الشرقية", district: "الظهران" },
+    "onizah": { city: "القصيم", district: "عنيزة" },
+    "hail": { city: "حائل", district: "حائل" },
+    "tabuk": { city: "تبوك", district: "تبوك" },
+    "abha": { city: "عسير", district: "أبها" },
+    "khamis": { city: "عسير", district: "خميس مشيط" },
+    "jazan": { city: "جازان", district: "جازان" },
+    "najran": { city: "نجران", district: "نجران" },
+    "taif": { city: "مكة", district: "الطائف" },
+    "yanbu": { city: "المدينة المنورة", district: "ينبع" },
+    "jubail": { city: "الشرقية", district: "الجبيل" },
+    "ahsaa": { city: "الشرقية", district: "الأحساء" },
+    "arar": { city: "الحدود الشمالية", district: "عرعر" },
+    "sakaka": { city: "الجوف", district: "سكاكا" },
+    "qurayyat": { city: "الجوف", district: "القريات" }
+  };
+
+  if(cityMapping[selected]){
+    document.getElementById("city").value = cityMapping[selected].city;
+    document.getElementById("district").value = cityMapping[selected].district;
+  }
+});
+
+//-------------------------------------------------------
+// MAP
+//-------------------------------------------------------
+
+let map = L.map('map').setView([26.3, 43.9], 13);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
+.addTo(map);
+
+let marker;
+
+map.on('click', async function(e){
+  const lat = e.latlng.lat;
+  const lng = e.latlng.lng;
+
+  document.getElementById("lat").value = lat;
+  document.getElementById("lng").value = lng;
+
+  if(marker){
+    marker.setLatLng(e.latlng);
+  } else {
+    marker = L.marker(e.latlng).addTo(map);
+  }
+
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=ar`
+    );
+
+    const data = await res.json();
+    const address = data.address;
+
+    document.getElementById("district").value = address.state || "";
+    document.getElementById("city").value = address.city || address.town || address.village || "";
+    document.getElementById("neighborhood").value = address.neighbourhood || address.city_district || address.suburb || "";
+
+    document.getElementById("locationText").textContent =
+    "📍 " +
+    (address.state || "") + " - " +
+    (address.city || address.town || address.village || "") + " - " +
+    (address.neighbourhood || address.city_district || address.suburb || "");
+
+  } catch (err) {
+    console.error(err);
+  }
+});
+
+//-------------------------------------------------------
+//current location button
+//-------------------------------------------------------
+
+function goToMyLocation(){
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+    map.setView([lat, lng], 15);
+  });
+}
+
+//-------------------------------------------------------
+// MEDIA 
+//-------------------------------------------------------
+
+const imagesInput = document.querySelector('input[name="images"]');
+const videoInput = document.querySelector('input[name="video"]');
+const blueprintInput = document.querySelector('input[name="blueprint"]');
+const legalInput = document.querySelector('input[name="legal_document"]');
+
+const imagePreview = document.getElementById("imagePreview");
+const videoPreview = document.getElementById("videoPreview");
+const blueprintPreview = document.getElementById("blueprintPreview");
+const legalPreview = document.getElementById("legalPreview");
+
+let selectedImages = [];
+let selectedVideo = null;
+let selectedBlueprint = null;
+let selectedLegalDoc = null;
+
+// ================= IMAGES =================
+imagesInput.addEventListener("change", (e) => {
+  selectedImages = Array.from(e.target.files).filter(f => f.type.startsWith("image"));
+  updateImageInput();
+  renderImages();
+});
+
+// ================= VIDEO =================
+videoInput.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if(file && file.type.startsWith("video")){
+    selectedVideo = file;
+  } else {
+    selectedVideo = null;
+  }
+  renderVideo();
+});
+
+// ================= BLUEPRINT =================
+blueprintInput.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if(file && (file.type.startsWith("image") || file.type === "application/pdf")){
+    selectedBlueprint = file;
+  } else {
+    selectedBlueprint = null;
+  }
+  renderBlueprint();
+});
+
+// ================= LEGAL DOCUMENT =================
+legalInput.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if(file && (file.type.startsWith("image") || file.type === "application/pdf")){
+    selectedLegalDoc = file;
+  } else {
+    selectedLegalDoc = null;
+  }
+  renderLegalDoc();
+});
+
+// ================= RENDER FUNCTIONS =================
+function renderImages(){
+  imagePreview.innerHTML = "";
+  selectedImages.forEach((file, index)=>{
+    const url = URL.createObjectURL(file);
+    const box = document.createElement("div");
+    box.style.position = "relative";
+    box.innerHTML = `
+      <img src="${url}">
+      <button class="remove-btn" onclick="removeImage(${index})">✕</button>
+    `;
+    imagePreview.appendChild(box);
+  });
+}
+
+function renderVideo(){
+  videoPreview.innerHTML = "";
+  if(selectedVideo){
+    const url = URL.createObjectURL(selectedVideo);
+    const box = document.createElement("div");
+    box.style.position = "relative";
+    box.innerHTML = `
+      <video src="${url}" controls></video>
+      <button class="remove-btn" onclick="removeVideo()">✕</button>
+    `;
+    videoPreview.appendChild(box);
+  }
+}
+
+function renderBlueprint(){
+  blueprintPreview.innerHTML = "";
+  if(selectedBlueprint){
+    const url = URL.createObjectURL(selectedBlueprint);
+    const box = document.createElement("div");
+    box.style.position = "relative";
+    if(selectedBlueprint.type === "application/pdf"){
+      box.innerHTML = `
+        <div style="width:110px;height:90px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;border-radius:12px;">
+          📄 PDF
+        </div>
+        <button class="remove-btn" onclick="removeBlueprint()">✕</button>
+      `;
+    } else {
+      box.innerHTML = `
+        <img src="${url}" style="width:110px;height:90px;object-fit:cover;border-radius:12px;">
+        <button class="remove-btn" onclick="removeBlueprint()">✕</button>
+      `;
+    }
+    blueprintPreview.appendChild(box);
+  }
+}
+
+function renderLegalDoc(){
+  legalPreview.innerHTML = "";
+  if(selectedLegalDoc){
+    const url = URL.createObjectURL(selectedLegalDoc);
+    const box = document.createElement("div");
+    box.style.position = "relative";
+    if(selectedLegalDoc.type === "application/pdf"){
+      box.innerHTML = `
+        <div style="width:110px;height:90px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;border-radius:12px;">
+          📄 PDF
+        </div>
+        <button class="remove-btn" onclick="removeLegalDoc()">✕</button>
+      `;
+    } else {
+      box.innerHTML = `
+        <img src="${url}" style="width:110px;height:90px;object-fit:cover;border-radius:12px;">
+        <button class="remove-btn" onclick="removeLegalDoc()">✕</button>
+      `;
+    }
+    legalPreview.appendChild(box);
+  }
+}
+
+// ================= REMOVE FUNCTIONS =================
+function removeImage(index){
+  selectedImages.splice(index,1);
+  updateImageInput();
+  renderImages();
+}
+
+function removeVideo(){
+  selectedVideo = null;
+  videoInput.value = "";
+  renderVideo();
+}
+
+function removeBlueprint(){
+  selectedBlueprint = null;
+  blueprintInput.value = "";
+  renderBlueprint();
+}
+
+function removeLegalDoc(){
+  selectedLegalDoc = null;
+  legalInput.value = "";
+  renderLegalDoc();
+}
+
+function updateImageInput(){
+  const dt = new DataTransfer();
+  selectedImages.forEach(f => dt.items.add(f));
+  imagesInput.files = dt.files;
+}
+
+//-------------------------------------------------------
+// PREVIEW
+//-------------------------------------------------------
+
+function generatePreview(){
+  const form = document.getElementById("propertyForm");
+  const f = new FormData(form);
+
+  const data = {
+    title: f.get("title"),
+    description: f.get("description"),
+    price: f.get("price"),
+    city: f.get("city"),
+    district: f.get("district"),
+    neighborhood: f.get("neighborhood"),
+    area: f.get("area_space"),
+    bedrooms: f.get("bedrooms"),
+    bathrooms: f.get("bathrooms"),
+    property_type: f.get("property_type"),
+    listing_type: f.get("listing_type"),
+    usage: f.get("usage"),
+    facade: f.get("facade"),
+    age: f.get("property_age"),
+    features: f.getAll("features")
+  };
+
+  const featureNames = {
+    "1":"مواقف سيارات",
+    "2":"مصعد",
+    "3":"كهرباء",
+    "4":"ماء",
+    "5":"غرفة سائق",
+    "6":"غرفة خادمة",
+    "7":"حديقة",
+    "8":"ملحق خارجي",
+    "9":"مستودع",
+    "10":"مسجد قريب",
+    "11":"مدرسة قريبة",
+    "12":"مستشفى قريب",
+    "13":"كاميرات مراقبة"
+  };
+
+  const featuresText = data.features.length > 0 ? data.features.map(f => featureNames[f]).join(" - ") : "لا يوجد";
+
+  // Images preview
+  let imagesHTML = "";
+  if(selectedImages.length > 0){
+    for(let file of selectedImages){
+      const url = URL.createObjectURL(file);
+      imagesHTML += `<img src="${url}" style="width:110px;margin:5px;border-radius:10px;">`;
+    }
+  }
+
+  // Video preview
+  let videoHTML = "";
+  if(selectedVideo){
+    const url = URL.createObjectURL(selectedVideo);
+    videoHTML = `<video src="${url}" controls style="width:250px;border-radius:10px;"></video>`;
+  }
+
+  // Blueprint preview
+  let blueprintHTML = "";
+  if(selectedBlueprint){
+    const url = URL.createObjectURL(selectedBlueprint);
+    if(selectedBlueprint.type === "application/pdf"){
+      blueprintHTML = `
+        <div style="margin-top:10px;">
+          <strong> المخطط الهندسي:</strong>
+          <div style="margin-top:5px;">
+            <a href="${url}" target="_blank" style="color:#b58b63;"> عرض المخطط (PDF)</a>
+          </div>
+        </div>
+      `;
+    } else {
+      blueprintHTML = `
+        <div style="margin-top:10px;">
+          <strong> المخطط الهندسي:</strong>
+          <div style="margin-top:5px;">
+            <img src="${url}" style="max-width:200px; border-radius:8px;">
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  // Legal document preview
+  let legalHTML = "";
+  if(selectedLegalDoc){
+    const url = URL.createObjectURL(selectedLegalDoc);
+    if(selectedLegalDoc.type === "application/pdf"){
+      legalHTML = `
+        <div style="margin-top:10px;">
+          <strong> مستند ملكية العقار:</strong>
+          <div style="margin-top:5px;">
+            <a href="${url}" target="_blank" style="color:#b58b63;"> عرض المستند (PDF)</a>
+            <div class="settings-hint">🔒 هذا المستند يظهر فقط للمشرف</div>
+          </div>
+        </div>
+      `;
+    } else {
+      legalHTML = `
+        <div style="margin-top:10px;">
+          <strong> مستند ملكية العقار:</strong>
+          <div style="margin-top:5px;">
+            <img src="${url}" style="max-width:200px; border-radius:8px;">
+            <div class="settings-hint">🔒 هذا المستند يظهر فقط للمشرف</div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  document.getElementById("previewBox").innerHTML = `
+    <h2>${data.title || "-"}</h2>
+    <p>${data.description || ""}</p>
+    <hr>
+    <h4> السعر</h4>
+    <p>${data.price || "-"} ريال</p>
+    <h4> الموقع</h4>
+    <p>${data.city || "-"} - ${data.district || "-"} - ${data.neighborhood || "-"}</p>
+    <hr>
+    <h4> التفاصيل</h4>
+    <p>المساحة: ${data.area || "-"} م²</p>
+    <p>الغرف: ${data.bedrooms || "-"}</p>
+    <p>الحمامات: ${data.bathrooms || "-"}</p>
+    <p>نوع العقار: ${data.property_type || "-"}</p>
+    <p>نوع العرض: ${data.listing_type || "-"}</p>
+    <p>الاستخدام: ${data.usage || "-"}</p>
+    <p>الواجهة: ${data.facade || "-"}</p>
+    <p>عمر العقار: ${data.age || "-"}</p>
+    <hr>
+    <h4> المزايا</h4>
+    <p>${featuresText}</p>
+    <hr>
+    <h4> الصور</h4>
+    ${imagesHTML || "لا يوجد صور"}
+    <h4> الفيديو</h4>
+    ${videoHTML || "لا يوجد فيديو"}
+    ${blueprintHTML}
+    ${legalHTML}
+  `;
+}
+
+//-------------------------------------------------------
+// ERROR HANDLING - IMPROVED
+//-------------------------------------------------------
+
+function showError(input, message){
+  // Add error class to input
+  input.classList.add("input-error");
+  
+  // Find the parent input-group
+  const inputGroup = input.closest('.input-group');
+  if (!inputGroup) return;
+  
+  // Remove any existing error for this input
+  const existingError = inputGroup.querySelector('.error-text');
+  if (existingError) {
+    existingError.remove();
+  }
+  
+  // Create new error element
+  const error = document.createElement("div");
+  error.className = "error-text";
+  error.innerText = message;
+  
+  // Insert error after the input field
+  input.insertAdjacentElement("afterend", error);
+}
+
+function clearError(input){
+  // Remove error class from input
+  input.classList.remove("input-error");
+  
+  // Find the parent input-group
+  const inputGroup = input.closest('.input-group');
+  if (!inputGroup) return;
+  
+  // Remove error message
+  const error = inputGroup.querySelector('.error-text');
+  if (error) {
+    error.remove();
+  }
+}
+
+// Add real-time error clearing when user types or changes value
+function setupRealTimeValidation() {
+  // For text inputs and textareas
+  const textInputs = document.querySelectorAll('input[type="text"], input[type="number"], textarea, select');
+  textInputs.forEach(input => {
+    input.addEventListener('input', function() {
+      if (this.classList.contains('input-error')) {
+        clearError(this);
+      }
+    });
+    
+    input.addEventListener('change', function() {
+      if (this.classList.contains('input-error')) {
+        clearError(this);
+      }
+    });
+  });
+}
+
+// Call this after DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+  setupRealTimeValidation();
+});
+
+//-------------------------------------------------------
+// FORM SUBMISSION - WITH REDIRECT
+//-------------------------------------------------------
+
+const form = document.getElementById("propertyForm");
+const saveBtn = document.getElementById("saveBtn");
+const termsCheck = document.getElementById("termsCheck");
+
+termsCheck.addEventListener("change", ()=>{
+  if(termsCheck.checked){
+    termsError.style.display = "none";
+  }
+});
+
+document.getElementById('saveBtn').addEventListener('click', async function(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  
+  if(!termsCheck.checked){
+    termsError.style.display = "block";
+    return;
+  }
+
+  const btn = this;
+  btn.disabled = true;
+  btn.innerText = "⏳ جاري الإضافة...";
+
+  try {
+    const formData = new FormData();
+    
+    // Get all form fields
+    formData.append("title", document.querySelector('input[name="title"]').value);
+    formData.append("description", document.querySelector('textarea[name="description"]').value);
+    formData.append("price", document.querySelector('input[name="price"]').value);
+    formData.append("city", document.getElementById("city").value);
+    formData.append("district", document.getElementById("district").value);
+    formData.append("neighborhood", document.getElementById("neighborhood").value);
+    formData.append("area_space", document.querySelector('input[name="area_space"]').value);
+    formData.append("bedrooms", document.querySelector('input[name="bedrooms"]').value);
+    formData.append("bathrooms", document.querySelector('input[name="bathrooms"]').value);
+    formData.append("property_type", document.querySelector('select[name="property_type"]').value);
+    formData.append("listing_type", document.querySelector('select[name="listing_type"]').value);
+    formData.append("usage", document.querySelector('select[name="usage"]').value);
+    formData.append("facade", document.querySelector('select[name="facade"]').value);
+    formData.append("property_age", document.querySelector('input[name="property_age"]').value);
+    formData.append("lat", document.getElementById("lat").value);
+    formData.append("lng", document.getElementById("lng").value);
+    
+    // Features
+    const features = document.querySelectorAll('input[name="features"]:checked');
+    features.forEach(f => formData.append("features", f.value));
+    
+    // Files
+    selectedImages.forEach(file => formData.append("images", file));
+    if(selectedVideo) formData.append("video", selectedVideo);
+    if(selectedBlueprint) formData.append("blueprint", selectedBlueprint);
+    if(selectedLegalDoc) formData.append("legal_document", selectedLegalDoc);
+    
+    console.log("🚀 Sending form...");
+    
+    const response = await fetch("http://127.0.0.1:3001/api/properties", {
+      method: "POST",
+      credentials: "include",
+      body: formData
+    });
+    
+    console.log("📡 Response status:", response.status);
+    
+if(response.ok) {
+  const result = await response.json();
+  console.log("Property saved, ID:", result.id);
+  alert("تم اضافه العقار بنجاح ");
+  // Use window.location.replace instead of href
+  window.location.replace("owner_ads.html");
+  return;
+} else {
+      const errorText = await response.text();
+      console.error("❌ Server error:", errorText);
+      alert("❌ خطأ: " + errorText);
+      btn.disabled = false;
+      btn.innerText = "تأكيد وإضافة العقار";
+    }
+    
+  } catch(error) {
+    console.error("❌ Network error:", error);
+    alert("❌ خطأ اتصال: " + error.message);
+    btn.disabled = false;
+    btn.innerText = "تأكيد وإضافة العقار";
+  }
+});
+
+// Prevent default form submission
+document.getElementById("propertyForm").addEventListener('submit', function(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  return false;
+});
+
+</script>
+
+</body>
+</html>

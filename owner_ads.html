@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>الإعلانات | نقطة وصل</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="Style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    .rejection-reason-link {
+      color: #dc2626;
+      font-size: 12px;
+      text-decoration: underline;
+      cursor: pointer;
+      display: inline-block;
+      margin-top: 4px;
+    }
+    .rejection-reason-link:hover {
+      color: #b91c1c;
+    }
+    .action-btn.edit-review {
+      background: #b58b63 !important;
+      color: white !important;
+    }
+    
+    .status { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; }
+    .status.active { background: #dcfce7; color: #16a34a; }
+    .status.pending { background: #e2e8f0; color: #4a5568; }
+    .status.approved { background: #dbeafe; color: #1e40af; }
+    .status.rejected { background: #fee2e2; color: #dc2626; }
+    .status.stopped { background: #fef3c7; color: #b45309; }
+    .status.closed { background: #2d3436; color: #fff; }
+    
+    .status-description {
+      font-size: 11px;
+      color: #d97706;
+      margin-top: 4px;
+    }
+    .status-cell {
+      vertical-align: middle;
+    }
+    .status-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-box {
+      background: white;
+      padding: 28px;
+      border-radius: 20px;
+      width: 500px;
+      max-width: 90%;
+      text-align: right;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+    .profile-save {
+      background: #b58b63;
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      font-family: "Tajawal", sans-serif;
+    }
+    .profile-cancel {
+      background: #e2e8f0;
+      color: #4a5568;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      font-family: "Tajawal", sans-serif;
+    }
+    .action-btn {
+      font-family: "Tajawal", sans-serif;
+    }
+    .ads-table-wrapper{
+  max-height: 500px;
+  overflow-y: auto;
+  overflow-x: auto;
+  border-radius: 16px;
+  direction: ltr;
+}
+
+.ads-table-wrapper::-webkit-scrollbar{
+  width: 8px;
+}
+
+.ads-table-wrapper::-webkit-scrollbar-thumb{
+  background: #c59b6d;
+  border-radius: 10px;
+}
+
+.ads-table-wrapper::-webkit-scrollbar-track{
+  background: #f3f4f6;
+}
+.ads-table{
+  direction: rtl;
+}
+.dash-side{
+  position: fixed;
+  right: 0; 
+  top: 0;
+  width: 320px;
+  height: 100vh;
+  overflow: hidden;
+  background: white;
+  z-index: 100;
+}
+.dash-main{
+  margin-right: 320px;
+}
+
+  </style>
+
+  
+</head>
+
+<div id="logoutModal" class="modal">
+  <div class="modal-box">
+    <h3>تأكيد تسجيل الخروج</h3>
+    <p>هل أنت متأكد أنك تريد تسجيل الخروج؟</p>
+    <div class="modal-actions">
+      <button id="confirmLogout" class="profile-save">نعم، خروج</button>
+      <button id="cancelLogout" class="profile-cancel">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<div id="rejectionModal" class="modal">
+  <div class="modal-box">
+    <h3>سبب رفض الإعلان</h3>
+    <div id="rejectionReasonText" style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin: 15px 0; color: #dc2626;"></div>
+    <p style="font-size: 13px; color: #666; margin-bottom: 15px;">يرجى تعديل البيانات المطلوبة ثم طلب إعادة المراجعة</p>
+    <div class="modal-actions">
+      <button id="closeRejectionModal" class="profile-cancel">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<body class="dash-page">
+
+  <div class="dash-shell">
+
+    <aside class="dash-side">
+      <div>
+        <div class="dash-brand">نقطة وصل</div>
+        <div class="user-box">
+          <i class="fa fa-user user-icon"></i>
+          <span id="userName"></span>
+        </div>
+      </div>
+      <nav class="dash-nav">
+        <a class="dash-link" href="owner_profile.html">ملف البيانات الشخصية</a>
+        <a class="dash-link is-active" href="#">الإعلانات</a>
+        <a class="dash-link" href="chat_owner.html">المحادثات</a>
+      </nav>
+      <div class="dash-sep"></div>
+      <div class="dash-bottom">
+        <button class="dash-btn dash-btn--ghost" type="button" onclick="window.location.href='index.html'">الذهاب لصفحة الرئيسية</button>
+        <button class="dash-btn dash-btn--ghost" id="logoutBtn">تسجيل الخروج</button>
+      </div>
+    </aside>
+
+    <main class="dash-main">
+      <div class="dash-center ads-page">
+        <div class="dash-head">
+          <h1 class="dash-title">الإعلانات</h1>
+        </div>
+
+        <div id="emptyState" class="empty-box">
+          <h3>ليس لديك عقارات بعد</h3>
+          <p>ابدأ بإضافة أول عقار لك</p>
+          <button class="profile-save" onclick="goToAdd()">إضافة عقار</button>
+        </div>
+
+        <div id="adsContent" style="display:none;">
+          <div class="ads-topbar">
+            <div class="ads-filters">
+              <input type="text" id="searchInput" placeholder="البحث بعنوان الإعلان" class="filter-input">
+              <select id="statusFilter" class="filter-select">
+                <option value="">جميع الحالات</option>
+                <option value="active">نشط</option>
+                <option value="pending">قيد المراجعة</option>
+                <option value="approved">مقبول</option>
+                <option value="rejected">مرفوض</option>
+                <option value="stopped">موقف</option>
+              </select>
+              <select id="sortFilter" class="filter-select">
+                <option value="">ترتيب حسب</option>
+                <option value="price_desc">الأعلى سعراً</option>
+                <option value="price_asc">الأقل سعراً</option>
+                <option value="newest">الأحدث</option>
+                <option value="oldest">الأقدم</option>
+              </select>
+              <input type="date" id="dateFilter" class="filter-input date-filter">
+              <button id="showAllBtn" class="filter-select"> الكل</button>
+            </div>
+            <button class="add-property-btn" onclick="goToAdd()">إضافة عقار جديد</button>
+          </div>
+
+          <div class="ads-table-wrapper">
+            <table class="ads-table" id="adsTable">
+              <thead>
+                <tr>
+                  <th>صورة العقار</th>
+                  <th>عنوان الإعلان</th>
+                  <th>المدينة</th>
+                  <th>السعر</th>
+                  <th>الحالة</th>
+                  <th>تاريخ النشر</th>
+                  <th>إجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="adsList">
+                <tr><td colspan="7" style="text-align:center;">جاري تحميل الإعلانات...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let currentAdsData = [];
+    let selectedAdForRejection = null;
+
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+
+    if (user) {
+
+  let roleText = "";
+
+  if (user.role === "owner") {
+    roleText = " (مالك)";
+  }
+  else if (user.role === "searcher") {
+    roleText = " (باحث)";
+  }
+  else if (user.role === "admin") {
+    roleText = " (مدير النظام)";
+  }
+
+  document.getElementById("userName").textContent =
+    user.full_name + roleText;
+
+} else {
+  window.location.href = "login.html";
+}
+
+    async function loadAds() {
+      console.log("=== loadAds started ===");
+      
+      const user = JSON.parse(localStorage.getItem("user") || "null");
+      console.log("User from localStorage:", user);
+      
+      if (!user?.id) {
+        console.log("No user id found");
+        return;
+      }
+
+      try {
+        const url = `http://127.0.0.1:3001/api/my-properties/${user.id}`;
+        console.log("Fetching from:", url);
+        
+        const res = await fetch(url, {
+          credentials: "include",
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        console.log("Response status:", res.status);
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.log("Error response:", errorText);
+          throw new Error(`HTTP ${res.status}: ${errorText}`);
+        }
+        
+        const data = await res.json();
+        console.log("Properties data received:", data);
+        console.log("Number of properties:", data.length);
+
+        // حفظ البيانات في المتغير العام
+        currentAdsData = data;
+        
+        // استخدام renderAds لعرض البيانات
+        renderAds(currentAdsData);
+        
+      } catch (e) {
+        console.error("Error in loadAds:", e);
+        alert("خطأ في تحميل العقارات: " + e.message);
+      }
+    }
+
+    // دالة طلب المراجعة
+    async function requestReview(propertyId) {
+      if(confirm('هل تريد طلب مراجعة هذا العقار بعد الرفض؟')) {
+        try {
+          const response = await fetch(`http://127.0.0.1:3001/api/properties/${propertyId}/request-review`, {
+            method: 'PUT',
+            credentials: 'include'
+          });
+          const data = await response.json();
+          if(response.ok) {
+            alert('تم طلب المراجعة، سيتم مراجعة العقار من قبل الإدارة');
+            loadAds();
+          } else {
+            alert(data.message || 'فشل في طلب المراجعة');
+          }
+        } catch(err) {
+          alert('خطأ في الاتصال');
+        }
+      }
+    }
+
+    function applyFiltersAndRender() {
+      const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
+      const statusFilter = document.getElementById('statusFilter')?.value || '';
+      const sortFilter = document.getElementById('sortFilter')?.value || '';
+      const dateFilter = document.getElementById('dateFilter')?.value || '';
+
+      let filtered = [...currentAdsData];
+
+      if (searchTerm) {
+        filtered = filtered.filter(ad => (ad.title || '').toLowerCase().includes(searchTerm));
+      }
+      if (statusFilter) {
+        filtered = filtered.filter(ad => ad.status === statusFilter);
+      }
+      if (dateFilter) {
+        filtered = filtered.filter(ad => {
+          const adDate = ad.created_at ? ad.created_at.split('T')[0] : '';
+          return adDate === dateFilter;
+        });
+      }
+      if (sortFilter === 'price_desc') {
+        filtered.sort((a, b) => (b.price || 0) - (a.price || 0));
+      } else if (sortFilter === 'price_asc') {
+        filtered.sort((a, b) => (a.price || 0) - (b.price || 0));
+      } else if (sortFilter === 'newest') {
+        filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      } else if (sortFilter === 'oldest') {
+        filtered.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      }
+
+      renderAds(filtered);
+    }
+
+    async function requestReviewAfterEdit(propertyId) {
+      try {
+        const response = await fetch(`http://127.0.0.1:3001/api/properties/${propertyId}/request-review`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) throw new Error(data.message || 'فشل في طلب المراجعة');
+        
+        alert('تم إرسال طلب المراجعة للإدارة');
+        loadAds();
+      } catch (error) {
+        console.error('Error requesting review:', error);
+        alert(error.message || 'فشل في طلب المراجعة');
+      }
+    }
+
+    function editProperty(adId, isRejected = false) {
+      if (isRejected) {
+        if (confirm('هل قمت بتعديل بيانات العقار بناءً على سبب الرفض؟ سيتم إرسال طلب مراجعة جديد للإدارة.')) {
+          requestReviewAfterEdit(adId);
+        }
+      } else {
+        window.location.href = `edit_property.html?id=${adId}`;
+      }
+    }
+
+    function showRejectionReason(ad) {
+      selectedAdForRejection = ad;
+      const modal = document.getElementById('rejectionModal');
+      const reasonDiv = document.getElementById('rejectionReasonText');
+      reasonDiv.innerHTML = ad.rejection_reason || 'لا يوجد سبب محدد';
+      modal.style.display = 'flex';
+    }
+
+    function closeRejectionModal() {
+      document.getElementById('rejectionModal').style.display = 'none';
+      selectedAdForRejection = null;
+    }
+
+    function getPhotoUrl(photoPath) {
+      if (!photoPath) return "hero-owner.png";
+      if (photoPath.startsWith('http')) return photoPath;
+      return `http://127.0.0.1:3001${photoPath}`;
+    }
+
+    function renderAds(data) {
+      const empty = document.getElementById("emptyState");
+      const adsContent = document.getElementById("adsContent");
+      const container = document.getElementById("adsList");
+
+      if (!data || data.length === 0) {
+
+  // إذا المستخدم ما عنده عقارات نهائيًا
+  if(currentAdsData.length === 0){
+    if (empty) empty.style.display = "block";
+    if (adsContent) adsContent.style.display = "none";
+  }
+
+  // إذا الفلاتر ما رجعت نتائج
+  else{
+    if (empty) empty.style.display = "none";
+    if (adsContent) adsContent.style.display = "block";
+
+    container.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align:center; padding:40px; color:#777;">
+          لا توجد نتائج مطابقة للفلاتر
+        </td>
+      </tr>
+    `;
+  }
+
+  return;
+}
+
+      if (empty) empty.style.display = "none";
+      if (adsContent) adsContent.style.display = "block";
+      container.innerHTML = "";
+
+      data.forEach(ad => {
+        let statusText = "";
+        let statusClass = "";
+        let actionButtons = "";
+        let showRejectionLink = false;
+        let modifiedMessage = "";
+
+        if (ad.status === "active") {
+          statusText = "نشط";
+          statusClass = "active";
+          actionButtons = `<button class="action-btn paid" disabled>تم الدفع</button>`;
+        }
+        else if (ad.status === "pending") {
+          statusText = "قيد المراجعة";
+          statusClass = "pending";
+          actionButtons = "";
+          if (ad.modified_after_rejection) {
+            modifiedMessage = '<div class="status-description">✅ تم إرسال طلب مراجعة - ينتظر قبول الأدمن</div>';
+          }
+        }
+        else if (ad.status === "approved") {
+          statusText = "مقبول";
+          statusClass = "approved";
+          actionButtons = `
+            <button class="action-btn pay-now" onclick="goToPayment(${ad.id})">ادفع الآن</button>
+          `;
+        }
+        else if (ad.status === "rejected") {
+          statusText = "مرفوض";
+          statusClass = "rejected";
+          showRejectionLink = true;
+          actionButtons = `
+            <button class="action-btn edit-review" onclick="editProperty(${ad.id}, true)">تعديل وطلب مراجعة</button>
+          `;
+        }
+        else if (ad.status === "stopped") {
+          statusText = "موقف";
+          statusClass = "stopped";
+          actionButtons = `<button class="action-btn" disabled>موقف</button>`;
+        }
+        else if (ad.status === "closed") {
+          statusText = "مغلق";
+          statusClass = "closed";
+        }
+
+
+        const photoSrc = getPhotoUrl(ad.photo);
+        const dateText = ad.created_at ? new Date(ad.created_at).toLocaleDateString("ar-SA") : "-";
+        const safeRejectionReason = (ad.rejection_reason || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+        // أزرار التعديل والحذف - تظهر لجميع الحالات ما عدا "موقف"
+        const showEditDelete = ad.status !== "stopped";
+        const editDeleteButtons = showEditDelete ? `
+          <button class="action-btn delete" onclick="deleteAd(${ad.id})">حذف</button>
+        ` : '';
+
+        container.innerHTML += `
+          <tr data-id="${ad.id}">
+            <td><img src="${photoSrc}" class="ad-img" alt="صورة العقار" onerror="this.src='hero-owner.png'"></td>
+            <td class="ad-title">
+  <a href="property_detailes.html?id=${ad.id}" 
+     style="color:#111827; text-decoration:none; font-weight:700;">
+    ${ad.title || "-"}
+  </a>
+  ${modifiedMessage}
+</td>
+            <td>${ad.city || "-"}</td>
+            <td class="price-cell">${Number(ad.price || 0).toLocaleString()} ريال<\/td>
+            <td class="status-cell">
+              <div class="status-wrapper">
+                <span class="status ${statusClass}">${statusText}<\/span>
+                ${showRejectionLink && ad.rejection_reason ? `<span class="rejection-reason-link" onclick='showRejectionReason({rejection_reason: "${safeRejectionReason}"})'>⚠️ سبب الرفض<\/span>` : ''}
+              <\/div>
+            <\/td>
+            <td class="date-cell">${dateText}<\/td>
+            <td>
+              <div class="actions">
+                ${editDeleteButtons}
+                ${actionButtons}
+              <\/div>
+           <\/td>
+          <\/tr>
+        `;
+      });
+    }
+
+    async function deleteAd(adId) {
+      if (confirm('هل أنت متأكد من حذف هذا الإعلان؟ لا يمكن التراجع عن هذا الإجراء.')) {
+        try {
+          const response = await fetch(`http://127.0.0.1:3001/api/properties/${adId}`, {
+            method: 'DELETE',
+            credentials: 'include'
+          });
+          if (!response.ok) throw new Error('فشل في الحذف');
+          alert('تم حذف الإعلان بنجاح');
+          loadAds();
+        } catch (error) {
+          console.error('Error deleting ad:', error);
+          alert('فشل في حذف الإعلان');
+        }
+      }
+    }
+
+    function setupFilters() {
+      const searchInput = document.getElementById('searchInput');
+      const statusFilter = document.getElementById('statusFilter');
+      const sortFilter = document.getElementById('sortFilter');
+      const dateFilter = document.getElementById('dateFilter');
+
+      if (searchInput) searchInput.addEventListener('input', () => applyFiltersAndRender());
+      if (statusFilter) statusFilter.addEventListener('change', () => applyFiltersAndRender());
+      if (sortFilter) sortFilter.addEventListener('change', () => applyFiltersAndRender());
+      if (dateFilter) dateFilter.addEventListener('change', () => applyFiltersAndRender());
+
+      const showAllBtn = document.getElementById('showAllBtn');
+
+if(showAllBtn){
+  showAllBtn.addEventListener('click', () => {
+
+    document.getElementById('searchInput').value = "";
+    document.getElementById('statusFilter').value = "";
+    document.getElementById('sortFilter').value = "";
+    document.getElementById('dateFilter').value = "";
+
+    renderAds(currentAdsData);
+
+  });
+}
+    }
+
+    function goToAdd() {
+      // Store current page in sessionStorage so we know where to return
+      sessionStorage.setItem('returnToPage', window.location.href);
+      window.location.href = "add_property.html";
+    }
+
+    function goToPayment(propertyId) {
+      window.location.href = `payment.html?property_id=${propertyId}`;
+    }
+
+    // زر تسجيل الخروج
+    const logoutBtn = document.getElementById("logoutBtn");
+    const modal = document.getElementById("logoutModal");
+    const confirmLogout = document.getElementById("confirmLogout");
+    const cancelLogout = document.getElementById("cancelLogout");
+
+    if (logoutBtn) logoutBtn.onclick = () => { modal.style.display = "flex"; };
+    if (cancelLogout) cancelLogout.onclick = () => { modal.style.display = "none"; };
+    if (confirmLogout) confirmLogout.onclick = () => {
+      localStorage.removeItem("user");
+      window.location.href = "index.html";
+    };
+    
+    window.onclick = (e) => {
+      if (e.target === modal) modal.style.display = "none";
+      if (e.target === document.getElementById('rejectionModal')) closeRejectionModal();
+    };
+
+    const closeModalBtn = document.getElementById('closeRejectionModal');
+    if (closeModalBtn) closeModalBtn.addEventListener('click', closeRejectionModal);
+
+    // تحميل الإعلانات عند بدء الصفحة
+    loadAds();
+    setupFilters();
+
+    // تعريف الدوال globally
+    window.editProperty = editProperty;
+    window.deleteAd = deleteAd;
+    window.showRejectionReason = showRejectionReason;
+    window.closeRejectionModal = closeRejectionModal;
+    window.goToAdd = goToAdd;
+    window.goToPayment = goToPayment;
+  </script>
+
+</body>
+</html>

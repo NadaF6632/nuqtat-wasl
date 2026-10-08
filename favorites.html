@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>عقاراتي المفضلة | نقطة وصل</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="Style.css" />
+  <style>
+    .favorites-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .fav-card {
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      transition: 0.25s;
+      cursor: pointer;
+    }
+
+    .fav-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    }
+
+    .fav-card-img {
+      position: relative;
+      height: 200px;
+      overflow: hidden;
+    }
+
+    .fav-card-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .fav-card-remove {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: none;
+      background: #fff;
+      cursor: pointer;
+      font-size: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.2s;
+    }
+
+    .fav-card-remove:hover {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    .fav-card-info {
+      padding: 14px;
+    }
+
+    .fav-card-price {
+      font-weight: 900;
+      font-size: 18px;
+      color: #c9a57b;
+    }
+
+    .fav-card-title {
+      font-weight: 700;
+      margin-top: 6px;
+      font-size: 15px;
+    }
+
+    .fav-card-location {
+      font-size: 13px;
+      color: #777;
+      margin-top: 4px;
+    }
+
+    .fav-card-details {
+      display: flex;
+      gap: 12px;
+      margin-top: 10px;
+      font-size: 13px;
+      color: #555;
+    }
+
+    .empty-favorites {
+      text-align: center;
+      padding: 80px 20px;
+      color: #888;
+    }
+
+    .empty-favorites .icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+    }
+
+    .empty-favorites h3 {
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 900px) {
+      .favorites-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .favorites-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .dash-side{
+  position: fixed;
+  right: 0; 
+  top: 0;
+  width: 320px;
+  height: 100vh;
+  overflow: hidden;
+  background: white;
+  z-index: 100;
+}
+.dash-main{
+  margin-right: 320px;
+}
+
+  </style>
+</head>
+
+<!-- ===== Logout Modal ===== -->
+<div id="logoutModal" class="modal">
+  <div class="modal-box">
+    <h3>تأكيد تسجيل الخروج</h3>
+    <p>هل أنت متأكد أنك تريد تسجيل الخروج؟</p>
+
+    <div class="modal-actions">
+      <button id="confirmLogout" class="profile-save">نعم، خروج</button>
+      <button id="cancelLogout" class="profile-cancel">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<body class="dash-page">
+
+  <div class="dash-shell">
+
+    <aside class="dash-side">
+    <div>
+      <div class="dash-brand">نقطة وصل</div>
+      <div class="user-box">
+        <i class="fa fa-user user-icon"></i>
+        <span id="userName"></span>
+      </div>
+      </div>
+      <nav class="dash-nav">
+        <a class="dash-link" href="searcher_profile.html">ملف البيانات الشخصية</a>
+        <a class="dash-link is-active" href="favorites.html">العقارات المفضلة</a>
+        <a class="dash-link" href="chat_searcher.html">المحادثات</a>
+      </nav>
+
+      <div class="dash-sep"></div>
+
+      <div class="dash-bottom">
+        <button class="dash-btn dash-btn--ghost" type="button" onclick="window.location.href='index.html'">الذهاب لصفحة الرئيسية</button>
+        <button class="dash-btn dash-btn--ghost" type="button" id="logoutBtn">تسجيل الخروج</button>
+      </div>
+    </aside>
+
+    <main class="dash-main">
+      <div class="dash-center" style="max-width:1100px;">
+        <div class="dash-head">
+          <h1 class="dash-title">عقاراتي المفضلة</h1>
+        </div>
+
+        <div id="favoritesContainer">
+          <div style="text-align:center;padding:60px;color:#888;">جاري التحميل...</div>
+        </div>
+      </div>
+    </main>
+
+  </div>
+
+<script>
+
+// Display user name in the sidebar
+const userNameSpan = document.getElementById("userName");
+const user = JSON.parse(localStorage.getItem("user") || "null");
+
+if (userNameSpan && user) {
+
+  let roleText = "";
+
+  if (user.role === "owner") {
+    roleText = " (مالك)";
+  } 
+  else if (user.role === "searcher") {
+    roleText = " (باحث)";
+  } 
+  else if (user.role === "admin") {
+    roleText = " (مدير النظام)";
+  }
+
+  userNameSpan.textContent = user.full_name + roleText;
+}
+
+// ================= LOAD FAVORITES =================
+async function loadFavorites() {
+  const container = document.getElementById("favoritesContainer");
+
+  if (!user?.id) {
+    container.innerHTML = `
+      <div class="empty-favorites">
+        <div class="icon">🔒</div>
+        <h3>يجب تسجيل الدخول</h3>
+        <p>سجل دخولك لعرض عقاراتك المفضلة</p>
+        <button class="profile-save" onclick="window.location.href='Login.html'" style="margin-top:15px;">تسجيل الدخول</button>
+      </div>
+    `;
+    return;
+  }
+
+  try {
+    const res = await fetch("http://127.0.0.1:3001/api/favorites", {
+      credentials: "include"
+    });
+
+    if (!res.ok) {
+      throw new Error("فشل جلب المفضلة");
+    }
+
+    const favorites = await res.json();
+
+    if (!favorites || favorites.length === 0) {
+      container.innerHTML = `
+        <div class="empty-favorites">
+          <div class="icon">♡</div>
+          <h3>لا توجد عقارات مفضلة</h3>
+          <p>تصفح العقارات وأضف ما يعجبك إلى المفضلة</p>
+          <button class="profile-save" onclick="window.location.href='map.html'" style="margin-top:15px;">تصفح العقارات</button>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="favorites-grid">
+        ${favorites.map(fav => {
+          const photoUrl = fav.photo 
+            ? `http://127.0.0.1:3001${fav.photo}`
+            : "pic/n.png";
+
+          return `
+            <div class="fav-card" onclick="window.location.href='property.html?id=${fav.id}'">
+              <div class="fav-card-img">
+                <img src="${photoUrl}" onerror="this.src='pic/n.png'" alt="${fav.title}">
+                <button class="fav-card-remove" onclick="removeFavorite(event, ${fav.id})" title="إزالة من المفضلة">✕</button>
+              </div>
+              <div class="fav-card-info">
+                <div class="fav-card-price">${Number(fav.price).toLocaleString()} ريال</div>
+                <div class="fav-card-title">${fav.title}</div>
+                <div class="fav-card-location">${fav.city || ""} - ${fav.district || ""}</div>
+                <div class="fav-card-details">
+                  <span>🛏 ${fav.bedrooms || 0}</span>
+                  <span>🛁 ${fav.bathrooms || 0}</span>
+                  <span>📐 ${fav.area_space || 0} م²</span>
+                  <span>${fav.property_type || ""}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `;
+
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = `
+      <div class="empty-favorites">
+        <div class="icon">⚠️</div>
+        <h3>حدث خطأ</h3>
+        <p>${err.message}</p>
+      </div>
+    `;
+  }
+}
+
+// ================= REMOVE FAVORITE =================
+async function removeFavorite(event, propertyId) {
+  event.stopPropagation(); // Don't navigate to property page
+
+  if (!confirm("هل تريد إزالة هذا العقار من المفضلة؟")) return;
+
+  try {
+    const res = await fetch(`http://127.0.0.1:3001/api/favorites/${propertyId}`, {
+      method: "DELETE",
+      credentials: "include"
+    });
+
+    if (res.ok) {
+      loadFavorites(); // Refresh the list
+    }
+  } catch (err) {
+    alert("فشل إزالة العقار من المفضلة");
+  }
+}
+
+// ================= LOGOUT =================
+const logoutBtn = document.getElementById("logoutBtn");
+const modal = document.getElementById("logoutModal");
+const confirmLogout = document.getElementById("confirmLogout");
+const cancelLogout = document.getElementById("cancelLogout");
+
+logoutBtn.onclick = () => {
+  modal.style.display = "flex";
+};
+
+cancelLogout.onclick = () => {
+  modal.style.display = "none";
+};
+
+confirmLogout.onclick = () => {
+  localStorage.removeItem("user");
+  window.location.href = "index.html";
+};
+
+window.onclick = (e) => {
+  if (e.target === modal) {
+    modal.style.display = "none";
+  }
+};
+
+// ================= START =================
+loadFavorites();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>الدفع | نقطة وصل</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Tajawal", sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .payment-card {
+      width: min(480px, 92%);
+      background: #fff;
+      border-radius: 28px;
+      padding: 35px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, .08);
+    }
+
+    .logo {
+      font-size: 42px;
+      font-weight: 900;
+      text-align: center;
+      color: #b58b63;
+      margin-bottom: 12px;
+    }
+
+    .title {
+      text-align: center;
+      font-size: 30px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .sub {
+      text-align: center;
+      color: #777;
+      margin-bottom: 35px;
+    }
+
+    .payment-box {
+      background: #faf7f3;
+      border: 1px solid #eee;
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 25px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      font-size: 18px;
+    }
+
+    .row:last-child {
+      margin-bottom: 0;
+    }
+
+    .price {
+      font-weight: 800;
+      color: #b58b63;
+    }
+
+    .fake-card {
+      border: 1px solid #e5e5e5;
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 25px;
+    }
+
+    .input {
+      width: 100%;
+      height: 54px;
+      border: 1px solid #ddd;
+      border-radius: 14px;
+      padding: 0 15px;
+      margin-bottom: 14px;
+      font-family: "Tajawal";
+      font-size: 16px;
+    }
+
+    .flex {
+      display: flex;
+      gap: 12px;
+    }
+
+    .pay-btn {
+      width: 100%;
+      height: 58px;
+      border: none;
+      border-radius: 16px;
+      background: #b58b63;
+      color: #fff;
+      font-size: 20px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: .25s;
+    }
+
+    .pay-btn:hover {
+      opacity: .9;
+    }
+
+    .pay-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .secure {
+      text-align: center;
+      margin-top: 18px;
+      color: #888;
+      font-size: 14px;
+    }
+
+    .success {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .35);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    .success-box {
+      width: min(420px, 90%);
+      background: #fff;
+      border-radius: 24px;
+      padding: 35px;
+      text-align: center;
+      animation: popup .25s ease;
+    }
+
+    .success-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #e8f7ee;
+      color: #2e7d32;
+      font-size: 42px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: auto auto 20px;
+    }
+
+    .success-box h2 {
+      font-size: 30px;
+      margin-bottom: 10px;
+    }
+
+    .success-box p {
+      color: #666;
+      margin-bottom: 25px;
+    }
+
+    .done-btn {
+      width: 100%;
+      height: 54px;
+      border: none;
+      border-radius: 14px;
+      background: #b58b63;
+      color: #fff;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    @keyframes popup {
+      from {
+        opacity: 0;
+        transform: scale(.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .methods-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 15px;
+    }
+
+    .payment-methods {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-bottom: 25px;
+    }
+
+    .method {
+      height: 65px;
+      border: 1px solid #e5e5e5;
+      border-radius: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: .25s;
+      background: #fff;
+    }
+
+    .method img {
+      max-width: 55px;
+      max-height: 30px;
+    }
+
+    .method:hover {
+      transform: translateY(-2px);
+      border-color: #b58b63;
+    }
+
+    .method.active {
+      border: 2px solid #b58b63;
+      background: #faf7f3;
+    }
+
+    .apple-pay {
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .mada {
+      font-size: 24px;
+      font-weight: 900;
+      color: #00a3ad;
+    }
+
+    .visa-card {
+      font-size: 24px;
+      font-weight: 900;
+      color: #1a1f71;
+      letter-spacing: 2px;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #fff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-left: 8px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="payment-card">
+    <div class="logo">نقطة وصل</div>
+    <h1 class="title">إتمام الدفع</h1>
+    <p class="sub">ادفع رسوم نشر العقار لتفعيل الإعلان</p>
+
+    <div class="payment-box">
+      <div class="row">
+        <span>نوع الخدمة</span>
+        <strong>نشر إعلان عقاري</strong>
+      </div>
+      <div class="row">
+        <span>المبلغ</span>
+        <strong class="price" id="priceAmount">جاري التحميل...</strong>
+      </div>
+    </div>
+
+    <div class="methods-title">اختر طريقة الدفع</div>
+    <div class="payment-methods">
+      <div class="method active visa-card">VISA</div>
+      <div class="method">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg">
+      </div>
+      <div class="method">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg">
+      </div>
+      <div class="method mada">مدى</div>
+    </div>
+
+    <div class="fake-card">
+      <input class="input" placeholder="اسم حامل البطاقة">
+      <input class="input" placeholder="رقم البطاقة">
+      <div class="flex">
+        <input class="input" placeholder="MM/YY">
+        <input class="input" placeholder="CVV">
+      </div>
+    </div>
+
+    <button class="pay-btn" id="payBtn">ادفع الآن</button>
+    <div class="secure">🔒 مدفوعات آمنة 100%</div>
+  </div>
+
+  <div class="success" id="successModal">
+    <div class="success-box">
+      <div class="success-icon">✓</div>
+      <h2>تم الدفع بنجاح</h2>
+      <p>تم تفعيل إعلانك بنجاح</p>
+      <button class="done-btn" id="doneBtn">الذهاب لإعلاناتي</button>
+    </div>
+  </div>
+
+  <script>
+    // استقبال property_id من رابط الصفحة
+    const urlParams = new URLSearchParams(window.location.search);
+    const propertyId = urlParams.get('property_id');
+
+    const payBtn = document.getElementById("payBtn");
+    const successModal = document.getElementById("successModal");
+    const doneBtn = document.getElementById("doneBtn");
+    const priceAmount = document.getElementById("priceAmount");
+
+    let publishPrice = 100; // Default price
+
+    // ===== جلب سعر النشر من الإعدادات =====
+// ===== جلب سعر النشر من الإعدادات (Endpoint عام) =====
+async function loadPublishPrice() {
+  try {
+    console.log("جاري جلب سعر النشر...");
+    const response = await fetch('http://127.0.0.1:3001/api/public/settings/payment_price', {
+      credentials: 'include'
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log("تم جلب السعر:", data);
+      publishPrice = parseInt(data.value) || 100;
+      priceAmount.innerHTML = `${publishPrice.toLocaleString()} ريال`;
+    } else {
+      console.log("فشل في جلب السعر، استخدام القيمة الافتراضية");
+      priceAmount.innerHTML = `${publishPrice.toLocaleString()} ريال`;
+    }
+  } catch (error) {
+    console.error("خطأ في جلب سعر النشر:", error);
+    priceAmount.innerHTML = `${publishPrice.toLocaleString()} ريال`;
+  }
+}
+
+    // التحقق من وجود property_id
+    if (!propertyId) {
+      alert("خطأ: لم يتم تحديد العقار. سيتم إعادة توجيهك.");
+      setTimeout(() => {
+        window.location.href = "owner_ads.html";
+      }, 2000);
+    }
+
+    // جلب بيانات العقار لعرض السعر (اختياري)
+    async function loadPropertyDetails() {
+      if (!propertyId) return;
+
+      try {
+        const response = await fetch(`http://127.0.0.1:3001/api/properties/${propertyId}`, {
+          credentials: "include"
+        });
+
+        if (response.ok) {
+          const property = await response.json();
+          // يمكنك عرض سعر العقار إذا أردت
+          console.log("بيانات العقار:", property);
+        }
+      } catch (error) {
+        console.error("خطأ في جلب بيانات العقار:", error);
+      }
+    }
+
+    // ===== تحميل السعر عند بدء الصفحة =====
+    loadPublishPrice();
+    loadPropertyDetails();
+
+    // معالجة الدفع
+    payBtn.onclick = async () => {
+      if (!propertyId) {
+        alert("خطأ: لم يتم تحديد العقار");
+        return;
+      }
+
+      // تعطيل الزر وإظهار حالة المعالجة
+      payBtn.disabled = true;
+      payBtn.innerHTML = "جاري معالجة الدفع... <span class='loading-spinner'></span>";
+
+      try {
+        // استدعاء API لتفعيل العقار (تغيير الحالة إلى active)
+        const response = await fetch(`http://127.0.0.1:3001/api/properties/${propertyId}/activate`, {
+          method: 'PUT',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'فشل في تفعيل الإعلان');
+        }
+
+        const result = await response.json();
+        console.log("تم التفعيل بنجاح:", result);
+
+        // عرض نافذة النجاح
+        successModal.style.display = "flex";
+
+      } catch (error) {
+        console.error("خطأ في الدفع:", error);
+        alert("فشل الدفع: " + error.message);
+        
+        // إعادة تمكين الزر
+        payBtn.disabled = false;
+        payBtn.innerHTML = "ادفع الآن";
+      }
+    };
+
+    // العودة إلى صفحة الإعلانات
+    doneBtn.onclick = () => {
+      window.location.href = "owner_ads.html";
+    };
+
+    // إغلاق نافذة النجاح عند الضغط خارجها (اختياري)
+    successModal.onclick = (e) => {
+      if (e.target === successModal) {
+        successModal.style.display = "none";
+      }
+    };
+  </script>
+
+</body>
+</html>

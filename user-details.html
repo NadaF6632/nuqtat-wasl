@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>تفاصيل المستخدم | نقطة وصل</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Tajawal", sans-serif; background: #f5f6fa; }
+    
+    .loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #f5f6fa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #e2e8f0;
+      border-top-color: #b58b63;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .loading-text {
+      margin-top: 16px;
+      color: #666;
+      font-size: 14px;
+    }
+    
+    /* Fixed sidebar with scrollable content */
+    .dash-shell { display: none; min-height: 100vh; }
+    .dash-side { 
+      width: 260px; 
+      background: #1a1a2e; 
+      padding: 24px 16px; 
+      display: flex; 
+      flex-direction: column; 
+      justify-content: space-between; 
+      position: fixed; 
+      right: 0; 
+      top: 0; 
+      bottom: 0; 
+      overflow-y: auto;
+      z-index: 100;
+    }
+    .dash-main { 
+      flex: 1; 
+      padding: 24px 32px; 
+      margin-right: 260px;
+      min-height: 100vh;
+      overflow-y: auto;
+    }
+    .dash-center { max-width: 1000px; margin: 0 auto; }
+    
+    .dash-brand { font-weight: 900; font-size: 24px; color: #fff; margin-bottom: 32px; text-align: center; }
+    .dash-nav { display: flex; flex-direction: column; gap: 8px; }
+    .dash-link { padding: 12px 16px; border-radius: 12px; font-size: 14px; color: rgba(255,255,255,0.7); text-decoration: none; display: block; font-weight: 500; }
+    .dash-link:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    .dash-link.is-active { background: #b58b63; color: #fff; }
+    .dash-sep { height: 1px; background: rgba(255,255,255,0.1); margin: 20px 0; }
+    .dash-bottom { display: flex; flex-direction: column; gap: 10px; }
+    .dash-btn { 
+      width: 100%; 
+      padding: 10px; 
+      border-radius: 10px; 
+      border: none; 
+      cursor: pointer; 
+      font-weight: 700;
+      font-family: "Tajawal", sans-serif;
+      font-size: 14px;
+    }
+    .dash-btn--ghost { background: rgba(255,255,255,0.1); color: #fff; }
+    
+    .dash-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+    .back-button { background: none; border: none; font-size: 24px; cursor: pointer; color: #1a1a2e; margin-left: 16px; font-family: "Tajawal", sans-serif; }
+    .dash-title { font-size: 24px; font-weight: 800; color: #1a1a2e; }
+    .head-left { display: flex; align-items: center; gap: 12px; }
+    .user-avatar { width: 40px; height: 40px; background: #b58b63; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
+    
+    .action-buttons { display: flex; gap: 12px; margin: 20px 0; flex-wrap: wrap; }
+    .action-btn { 
+      padding: 10px 24px; 
+      border-radius: 10px; 
+      border: none; 
+      font-weight: 700; 
+      cursor: pointer; 
+      transition: all 0.2s;
+      font-family: "Tajawal", sans-serif;
+      font-size: 14px;
+    }
+    .action-btn.block { background: #dc2626; color: white; }
+    .action-btn.activate { background: #16a34a; color: white; }
+    .action-btn:hover { opacity: 0.85; }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .stat-card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 16px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .stat-card p {
+      color: #666;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    .stat-card h2 {
+      font-size: 32px;
+      color: #b58b63;
+      margin: 0;
+    }
+    
+    .table-card { background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-top: 20px; }
+    .details-container { padding: 28px; }
+    
+    .info-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #e2e8f0; }
+    .info-label { font-weight: 800; color: #4a5568; width: 180px; }
+    .info-value { color: #1a1a2e; flex: 1; }
+    
+    .section-title { font-size: 18px; font-weight: 800; color: #1a1a2e; margin: 20px 0 12px 0; padding-bottom: 8px; border-bottom: 2px solid #b58b63; display: inline-block; }
+    
+    .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; }
+    .status-badge.active { background: #dcfce7; color: #16a34a; }
+    .status-badge.blocked { background: #fee2e2; color: #dc2626; }
+    
+    .user-type-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; }
+    .user-type-badge.owner { background: #dbeafe; color: #1e40af; }
+    .user-type-badge.searcher { background: #dcfce7; color: #16a34a; }
+    
+    .property-list {
+      margin-top: 10px;
+    }
+    .property-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #edf2f7;
+    }
+    .property-title {
+      font-weight: 700;
+      color: #1a1a2e;
+    }
+    .property-status {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .property-status.active { background: #dcfce7; color: #16a34a; }
+    .property-status.pending { background: #e2e8f0; color: #4a5568; }
+    .property-status.approved { background: #dbeafe; color: #1e40af; }
+    .property-status.rejected { background: #fee2e2; color: #dc2626; }
+    .property-status.stopped { background: #fef3c7; color: #b45309; }
+    
+    .btn-view { 
+      background: #b58b63; 
+      color: white; 
+      border: none; 
+      padding: 4px 12px; 
+      border-radius: 6px; 
+      cursor: pointer;
+      font-family: "Tajawal", sans-serif;
+      font-size: 12px;
+      margin-right: 10px;
+    }
+    
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: white;
+      padding: 28px;
+      border-radius: 20px;
+      width: 400px;
+      max-width: 90%;
+      text-align: center;
+    }
+    .modal-content h3 {
+      margin-bottom: 16px;
+      color: #1a1a2e;
+    }
+    .modal-content p {
+      color: #666;
+      margin-bottom: 20px;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .modal-confirm { background: #dc2626; color: white; border: none; padding: 10px 24px; border-radius: 10px; cursor: pointer; font-weight: 700; }
+    .modal-cancel { background: #e2e8f0; color: #4a5568; border: none; padding: 10px 24px; border-radius: 10px; cursor: pointer; font-weight: 700; }
+    .modal-confirm.activate { background: #16a34a; }
+    
+    @media (max-width: 768px) { 
+      .dash-side { width: 100%; position: relative; height: auto; }
+      .dash-main { margin-right: 0; padding: 20px; }
+      .info-row { flex-direction: column; align-items: flex-start; gap: 8px; } 
+      .info-label { width: 100%; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* Logout Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 28px;
+  animation: popupShow .25s ease;
+}
+
+.logout-modal-box {
+  width: 340px;
+  max-width: 85%;
+  padding: 28px 22px;
+  text-align: center;
+}
+
+.logout-modal-box h3 {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 10px;
+  color: #111827;
+}
+
+.logout-modal-box p {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.modal-confirm {
+  background: #b58b63;
+  color: #fff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.modal-confirm:hover {
+  background: #9d7550;
+}
+
+.modal-cancel {
+  background: #f3f4f6;
+  color: #111827;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.modal-cancel:hover {
+  background: #e5e7eb;
+}
+
+@keyframes popupShow {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+  </style>
+</head>
+
+<!-- Logout Confirmation Modal -->
+<div id="logoutModal" class="modal-overlay">
+  <div class="modal-content logout-modal-box">
+    <h3>تأكيد تسجيل الخروج</h3>
+    <p>هل أنت متأكد أنك تريد تسجيل الخروج؟</p>
+    <div class="modal-actions">
+      <button id="confirmLogoutBtn" class="modal-confirm">نعم، خروج</button>
+      <button id="cancelLogoutBtn" class="modal-cancel">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<body>
+
+<div class="loading-screen" id="loadingScreen">
+  <div style="text-align: center;">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">جاري تحميل البيانات...</div>
+  </div>
+</div>
+
+<div class="dash-shell" id="dashboardContent">
+  <aside class="dash-side">
+    <div>
+      <div class="dash-brand">نقطة وصل</div>
+      <nav class="dash-nav">
+        <a class="dash-link" href="admin.html">لوحة التحكم</a>
+        <a class="dash-link" href="admin-properties.html">الإعلانات</a>
+        <a class="dash-link is-active" href="users.html">المستخدمين</a>
+        <a class="dash-link" href="reports.html">البلاغات</a>
+        <a class="dash-link" href="admin-settings.html"> الإعدادات</a>
+        <a class="dash-link" href="admin-payments.html"> المدفوعات</a>
+      </nav>
+    </div>
+    <div>
+      <div class="dash-sep"></div>
+      <div class="dash-bottom">
+        <button class="dash-btn dash-btn--ghost" id="logoutBtn">تسجيل الخروج</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="dash-main">
+    <div class="dash-center">
+      <div class="dash-head">
+        <div>
+          <button class="back-button" onclick="window.location.href='users.html'">→</button>
+          <span class="dash-title">تفاصيل المستخدم</span>
+        </div>
+        <div class="head-left"><span id="adminName"></span><div class="user-avatar">أ</div></div>
+      </div>
+
+      <!-- Action Buttons (Block / Activate) -->
+      <div id="actionButtons" class="action-buttons"></div>
+
+      <!-- User Statistics -->
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card"><p>عدد العقارات</p><h2 id="totalProperties">0</h2></div>
+        <div class="stat-card"><p>العقارات النشطة</p><h2 id="activeProperties">0</h2></div>
+        <div class="stat-card"><p>العقارات المكتملة</p><h2 id="closedProperties">0</h2></div>
+        <div class="stat-card"><p>العقارات قيد المراجعه</p><h2 id="pendingProperties">0</h2></div>
+      </div>
+
+      <!-- User Information -->
+      <div class="table-card">
+        <div id="detailsContainer" class="details-container">
+          <div style="text-align:center; padding:40px;">جاري التحميل...</div>
+        </div>
+      </div>
+
+      <!-- User Properties List -->
+      <div class="table-card" id="propertiesCard" style="display:none;">
+        <div class="details-container">
+          <h3 class="section-title">عقارات المستخدم</h3>
+          <div id="propertiesList" class="property-list"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Block Modal -->
+<div id="blockModal" class="modal-overlay">
+  <div class="modal-content">
+    <h3>حظر المستخدم</h3>
+    <p>هل أنت متأكد من حظر هذا المستخدم؟</p>
+    <p style="font-size:12px; color:#666;">سيتم تعليق جميع إعلاناته ومنعه من إضافة إعلانات جديدة</p>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeBlockModal()">إلغاء</button>
+      <button class="modal-confirm" id="confirmBlockBtn">حظر</button>
+    </div>
+  </div>
+</div>
+
+<!-- Activate Modal -->
+<div id="activateModal" class="modal-overlay">
+  <div class="modal-content">
+    <h3>تفعيل المستخدم</h3>
+    <p>هل أنت متأكد من إلغاء حظر هذا المستخدم؟</p>
+    <p style="font-size:12px; color:#666;">سيتم إعادة تفعيل حساب المستخدم وإعلاناته</p>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeActivateModal()">إلغاء</button>
+      <button class="modal-confirm activate" id="confirmActivateBtn">تفعيل</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentUser = null;
+  let userProperties = [];
+
+  function getUserId() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("id");
+  }
+
+  async function checkAuth() {
+    try {
+      const response = await fetch('http://127.0.0.1:3001/api/auth/me', { credentials: 'include' });
+      if (response.ok) {
+        const user = await response.json();
+        if (user.role === 'admin') {
+          document.getElementById('loadingScreen').style.display = 'none';
+          document.getElementById('dashboardContent').style.display = 'flex';
+          document.getElementById('adminName').innerHTML = user.full_name;
+          await loadUserDetails();
+          return;
+        }
+      }
+      window.location.href = 'login.html';
+    } catch (error) {
+      window.location.href = 'login.html';
+    }
+  }
+
+  async function loadUserDetails() {
+    const userId = getUserId();
+    if (!userId) {
+      document.getElementById("detailsContainer").innerHTML = '<div style="text-align:center; padding:40px;">خطأ: لم يتم تحديد المستخدم</div>';
+      return;
+    }
+
+    try {
+      // Fetch user information
+      const userResponse = await fetch(`http://127.0.0.1:3001/api/users/${userId}`, { credentials: 'include' });
+      if (!userResponse.ok) throw new Error('فشل في جلب بيانات المستخدم');
+      currentUser = await userResponse.json();
+      console.log("User data:", currentUser);
+
+      // Fetch user properties
+      const propsResponse = await fetch(`http://127.0.0.1:3001/api/admin/users/${userId}/properties`, { credentials: 'include' });
+      if (propsResponse.ok) {
+        userProperties = await propsResponse.json();
+        console.log("User properties:", userProperties);
+      }
+
+      renderUserDetails();
+      renderStats();
+      renderPropertiesList();
+    } catch (error) {
+      console.error(error);
+      document.getElementById("detailsContainer").innerHTML = '<div style="text-align:center; padding:40px;">حدث خطأ في تحميل البيانات</div>';
+    }
+  }
+
+  function getUserTypeText(type) {
+    if (type === 'owner') return 'مالك عقار';
+    if (type === 'searcher') return 'باحث';
+    return type;
+  }
+
+  function getUserTypeClass(type) { return type === 'owner' ? 'owner' : 'searcher'; }
+
+  function getStatusText(status) { 
+    if (!status || status === 'active') return 'نشط';
+    return 'محظور'; 
+  }
+
+  function getStatusClass(status) { 
+    if (!status || status === 'active') return 'active';
+    return 'blocked'; 
+  }
+  
+  function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('ar-SA') + ' ' + d.toLocaleTimeString('ar-SA');
+  }
+
+  function renderUserDetails() {
+    const container = document.getElementById("detailsContainer");
+    container.innerHTML = `
+      <div class="info-row">
+        <span class="info-label">الاسم الكامل</span>
+        <span class="info-value">${currentUser.full_name || '-'}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">نوع المستخدم</span>
+        <span class="info-value"><span class="user-type-badge ${getUserTypeClass(currentUser.role)}">${getUserTypeText(currentUser.role)}</span></span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">رقم الهوية</span>
+        <span class="info-value">${currentUser.national_id || '-'}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">رقم الجوال</span>
+        <span class="info-value">${currentUser.phone || '-'}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">البريد الإلكتروني</span>
+        <span class="info-value">${currentUser.email || '-'}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">حالة الحساب</span>
+        <span class="info-value"><span class="status-badge ${getStatusClass(currentUser.status)}">${getStatusText(currentUser.status)}</span></span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">تاريخ التسجيل</span>
+        <span class="info-value">${formatDate(currentUser.created_at)}</span>
+      </div>
+    `;
+
+    renderActionButtons(currentUser.status);
+  }
+
+  function renderActionButtons(userStatus) {
+      const container = document.getElementById('actionButtons');
+      // Treat null/undefined as active
+      if (!userStatus || userStatus === 'active') {
+        container.innerHTML = `<button class="action-btn block" id="blockUserBtn">حظر المستخدم</button>`;
+        document.getElementById('blockUserBtn')?.addEventListener('click', () => openBlockModal(currentUser.id));
+      } else {
+        container.innerHTML = `<button class="action-btn activate" id="activateUserBtn">إلغاء حظر المستخدم</button>`;
+        document.getElementById('activateUserBtn')?.addEventListener('click', () => openActivateModal(currentUser.id));
+      }
+    }
+
+  function renderStats() {
+    const total = userProperties.length;
+    const active = userProperties.filter(p => p.status === 'active').length;
+    const closed = userProperties.filter(p => p.status === 'closed').length; 
+    const pending = userProperties.filter(p => p.status === 'pending').length;
+
+    document.getElementById('totalProperties').textContent = total;
+    document.getElementById('activeProperties').textContent = active;
+    document.getElementById('closedProperties').textContent = closed;
+    document.getElementById('pendingProperties').textContent = pending;
+  }
+
+  function renderPropertiesList() {
+    const container = document.getElementById('propertiesList');
+    const card = document.getElementById('propertiesCard');
+    
+    if (!userProperties.length) {
+      card.style.display = 'none';
+      return;
+    }
+    
+    card.style.display = 'block';
+    
+    function getStatusText(status) {
+      const map = {
+        active: 'نشط',
+        pending: 'قيد المراجعة',
+        approved: 'مقبول',
+        rejected: 'مرفوض',
+        stopped: 'موقف',
+        closed: 'مغلق'
+      };
+      return map[status] || status;
+    }
+    
+    container.innerHTML = userProperties.map(prop => `
+      <div class="property-item">
+        <div class="property-title">${prop.title || 'عقار بدون عنوان'}</div>
+        <div>
+          <span class="property-status ${prop.status}">${getStatusText(prop.status)}</span>
+          <button class="btn-view" onclick="viewProperty(${prop.id})">عرض العقار</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function viewProperty(id) {
+    window.location.href = `ad-details.html?id=${id}`;
+  }
+
+  async function updateUserStatus(userId, newStatus) {
+    try {
+      const response = await fetch(`http://127.0.0.1:3001/api/admin/users/${userId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status: newStatus })
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.message || 'فشل في تحديث الحالة');
+      }
+      
+      alert(result.message);
+      
+      // Close modals
+      closeBlockModal();
+      closeActivateModal();
+      
+      // Update current user status locally
+      currentUser.status = newStatus;
+      
+      // Re-render
+      renderUserDetails();
+      
+    } catch (error) {
+      console.error('Error updating user status:', error);
+      alert('فشل في تحديث حالة المستخدم');
+    }
+  }
+
+  function openBlockModal(id) { 
+    selectedUserId = id; 
+    document.getElementById('blockModal').style.display = 'flex'; 
+  }
+  function closeBlockModal() { 
+    document.getElementById('blockModal').style.display = 'none'; 
+    selectedUserId = null; 
+  }
+  function openActivateModal(id) { 
+    selectedUserId = id; 
+    document.getElementById('activateModal').style.display = 'flex'; 
+  }
+  function closeActivateModal() { 
+    document.getElementById('activateModal').style.display = 'none'; 
+    selectedUserId = null; 
+  }
+  
+  async function blockUser() { 
+    if (selectedUserId) { 
+      await updateUserStatus(selectedUserId, 'blocked'); 
+    } 
+  }
+  async function activateUser() { 
+    if (selectedUserId) { 
+      await updateUserStatus(selectedUserId, 'active'); 
+    } 
+  }
+
+async function setupLogout() {
+  const logoutBtn = document.getElementById('logoutBtn');
+  const logoutModal = document.getElementById('logoutModal');
+  const confirmBtn = document.getElementById('confirmLogoutBtn');
+  const cancelBtn = document.getElementById('cancelLogoutBtn');
+
+  if (!logoutBtn || !logoutModal) return;
+
+  // Open modal when logout button is clicked
+  logoutBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    logoutModal.style.display = 'flex';
+  });
+
+  // Close modal when cancel is clicked
+  cancelBtn.addEventListener('click', () => {
+    logoutModal.style.display = 'none';
+  });
+
+  // Close modal when clicking outside
+  logoutModal.addEventListener('click', (e) => {
+    if (e.target === logoutModal) {
+      logoutModal.style.display = 'none';
+    }
+  });
+
+  // Confirm logout
+  confirmBtn.addEventListener('click', async () => {
+    await fetch('http://127.0.0.1:3001/api/auth/logout', { 
+      method: 'POST', 
+      credentials: 'include' 
+    });
+    localStorage.removeItem('user');
+    window.location.href = 'login.html';
+  });
+}
+
+  let selectedUserId = null;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    checkAuth();
+    setupLogout();
+    document.getElementById('confirmBlockBtn')?.addEventListener('click', blockUser);
+    document.getElementById('confirmActivateBtn')?.addEventListener('click', activateUser);
+  });
+
+  window.viewProperty = viewProperty;
+  window.openBlockModal = openBlockModal;
+  window.closeBlockModal = closeBlockModal;
+  window.openActivateModal = openActivateModal;
+  window.closeActivateModal = closeActivateModal;
+</script>
+
+</body>
+</html>

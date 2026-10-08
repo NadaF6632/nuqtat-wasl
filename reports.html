@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>البلاغات | نقطة وصل</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Tajawal", sans-serif; background: #f5f6fa; }
+    
+    .loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #f5f6fa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #e2e8f0;
+      border-top-color: #b58b63;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { margin-top: 16px; color: #666; font-size: 14px; }
+    
+    /* Fixed sidebar with scrollable content */
+    .dash-shell { display: none; min-height: 100vh; }
+    .dash-side { 
+      width: 260px; 
+      background: #1a1a2e; 
+      padding: 24px 16px; 
+      display: flex; 
+      flex-direction: column; 
+      justify-content: space-between; 
+      position: fixed; 
+      right: 0; 
+      top: 0; 
+      bottom: 0; 
+      overflow-y: auto;
+      z-index: 100;
+    }
+    .dash-main { 
+      flex: 1; 
+      padding: 24px 32px; 
+      margin-right: 260px;
+      min-height: 100vh;
+      overflow-y: auto;
+    }
+    .dash-center { max-width: 1400px; margin: 0 auto; }
+    
+    .dash-brand { font-weight: 900; font-size: 24px; color: #fff; margin-bottom: 32px; text-align: center; }
+    .dash-nav { display: flex; flex-direction: column; gap: 8px; }
+    .dash-link { padding: 12px 16px; border-radius: 12px; font-size: 14px; color: rgba(255,255,255,0.7); text-decoration: none; display: block; font-weight: 500; }
+    .dash-link:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    .dash-link.is-active { background: #b58b63; color: #fff; }
+    .dash-sep { height: 1px; background: rgba(255,255,255,0.1); margin: 20px 0; }
+    .dash-bottom { display: flex; flex-direction: column; gap: 10px; }
+    .dash-btn { 
+      width: 100%; 
+      padding: 10px; 
+      border-radius: 10px; 
+      border: none; 
+      cursor: pointer; 
+      font-weight: 700;
+      font-family: "Tajawal", sans-serif;
+      font-size: 14px;
+    }
+    .dash-btn--ghost { background: rgba(255,255,255,0.1); color: #fff; }
+    
+    .dash-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+    .dash-title { font-size: 28px; font-weight: 800; color: #1a1a2e; }
+    .head-left { display: flex; align-items: center; gap: 12px; }
+    .user-avatar { width: 40px; height: 40px; background: #b58b63; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
+    
+    /* Search and filter bar */
+    .search-filter-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .search-box { flex: 2; min-width: 250px; padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 14px; font-family: inherit; }
+    .filter-select { min-width: 180px; padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 12px; background: white; cursor: pointer; font-family: inherit; }
+    
+    /* Table styles */
+    .table-card { background: #fff; border-radius: 20px; overflow-x: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .card-header { padding: 16px 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+    .card-header h3 { font-size: 16px; margin: 0; }
+    .reports-table { width: 100%; border-collapse: collapse; min-width: 1200px; }
+    .reports-table th { text-align: right; padding: 14px 12px; background: #f8f9fa; font-weight: 800; font-size: 13px; border-bottom: 1px solid #e2e8f0; }
+    .reports-table td { padding: 14px 12px; border-bottom: 1px solid #edf2f7; font-size: 14px; vertical-align: middle; }
+    
+    /* Report type badges */
+    .report-badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; }
+    .report-badge.verbal { background: #fee2e2; color: #dc2626; }
+    .report-badge.financial { background: #fef3c7; color: #d97706; }
+    .report-badge.harassment { background: #fef3c7; color: #d97706; }
+    .report-badge.threat { background: #fee2e2; color: #dc2626; }
+    .report-badge.seriousness { background: #e0e7ff; color: #4338ca; }
+    
+    .btn-view { 
+      background: #b58b63; 
+      color: white; 
+      border: none; 
+      padding: 6px 16px; 
+      border-radius: 8px; 
+      cursor: pointer;
+      font-family: "Tajawal", sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .btn-resolve { 
+      background: #dcfce7; 
+      color: #16a34a; 
+      border: none; 
+      padding: 6px 12px; 
+      border-radius: 8px; 
+      cursor: pointer;
+      font-family: "Tajawal", sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+    
+    .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; }
+    .status-badge.pending { background: #fef3c7; color: #d97706; }
+    .status-badge.resolved { background: #dcfce7; color: #16a34a; }
+    .status-badge.rejected { background: #fee2e2; color: #dc2626; }
+    
+    /* Modal styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: white;
+      padding: 28px;
+      border-radius: 20px;
+      width: 500px;
+      max-width: 90%;
+      text-align: center;
+    }
+    .modal-content h3 {
+      margin-bottom: 16px;
+      color: #1a1a2e;
+    }
+    .modal-content p {
+      color: #666;
+      margin-bottom: 20px;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .modal-confirm { background: #dc2626; color: white; border: none; padding: 10px 24px; border-radius: 10px; cursor: pointer; font-weight: 700; }
+    .modal-cancel { background: #e2e8f0; color: #4a5568; border: none; padding: 10px 24px; border-radius: 10px; cursor: pointer; font-weight: 700; }
+    
+    @media (max-width: 768px) { 
+      .dash-side { width: 100%; position: relative; height: auto; }
+      .dash-main { margin-right: 0; padding: 20px; }
+      .search-filter-bar { flex-direction: column; } 
+      .filter-select { width: 100%; } 
+    }
+
+    /* Logout Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 28px;
+  animation: popupShow .25s ease;
+}
+
+.logout-modal-box {
+  width: 340px;
+  max-width: 85%;
+  padding: 28px 22px;
+  text-align: center;
+}
+
+.logout-modal-box h3 {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 10px;
+  color: #111827;
+}
+
+.logout-modal-box p {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.modal-confirm {
+  background: #b58b63;
+  color: #fff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.modal-confirm:hover {
+  background: #9d7550;
+}
+
+.modal-cancel {
+  background: #f3f4f6;
+  color: #111827;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.modal-cancel:hover {
+  background: #e5e7eb;
+}
+
+@keyframes popupShow {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+  </style>
+</head>
+
+<!-- Logout Confirmation Modal -->
+<div id="logoutModal" class="modal-overlay">
+  <div class="modal-content logout-modal-box">
+    <h3>تأكيد تسجيل الخروج</h3>
+    <p>هل أنت متأكد أنك تريد تسجيل الخروج؟</p>
+    <div class="modal-actions">
+      <button id="confirmLogoutBtn" class="modal-confirm">نعم، خروج</button>
+      <button id="cancelLogoutBtn" class="modal-cancel">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<body>
+
+<div class="loading-screen" id="loadingScreen">
+  <div style="text-align: center;">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">جاري التحقق من الجلسة...</div>
+  </div>
+</div>
+
+<div class="dash-shell" id="dashboardContent">
+  <aside class="dash-side">
+    <div>
+      <div class="dash-brand">نقطة وصل</div>
+      <nav class="dash-nav">
+        <a class="dash-link" href="admin.html">لوحة التحكم</a>
+        <a class="dash-link" href="admin-properties.html">الإعلانات</a>
+        <a class="dash-link" href="users.html">المستخدمين</a>
+        <a class="dash-link is-active" href="reports.html">البلاغات</a>
+        <a class="dash-link" href="admin-settings.html"> الإعدادات</a>
+        <a class="dash-link" href="admin-payments.html"> المدفوعات</a>
+      </nav>
+    </div>
+    <div>
+      <div class="dash-sep"></div>
+      <div class="dash-bottom">
+        <button class="dash-btn dash-btn--ghost" id="logoutBtn">تسجيل الخروج</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="dash-main">
+    <div class="dash-center">
+      <div class="dash-head">
+        <h1 class="dash-title">البلاغات</h1>
+        <div class="head-left"><span id="adminName"></span><div class="user-avatar">أ</div></div>
+      </div>
+
+      <!-- Search and Filter Bar -->
+      <div class="search-filter-bar">
+        <input type="text" id="searchInput" placeholder="بحث برقم البلاغ، المرسل، المستلم، عنوان الإعلان..." class="search-box">
+        <select id="typeFilter" class="filter-select">
+          <option value="">جميع أنواع البلاغات</option>
+          <option value="verbal">إساءة لفظية</option>
+          <option value="financial">احتيال مالي</option>
+          <option value="harassment">مضايقة / إزعاج</option>
+          <option value="threat">تهديد / ابتزاز</option>
+          <option value="seriousness">عدم جديّة المشتري</option>
+          <option value="other">أخرى</option>
+        </select>
+        <select id="statusFilter" class="filter-select">
+          <option value="">جميع الحالات</option>
+          <option value="pending">قيد المراجعة</option>
+          <option value="resolved">تم الحل</option>
+          <option value="rejected">مرفوض</option>
+        </select>
+      </div>
+
+      <!-- Reports Table -->
+      <div class="table-card">
+        <div class="card-header"><h3>قائمة البلاغات</h3><span id="resultsCount"></span></div>
+        <table class="reports-table">
+          <thead>
+            <tr>
+              <th>رقم البلاغ</th>
+              <th>نوع البلاغ</th>
+              <th>من</th>
+              <th>إلى</th>
+              <th>رقم الإعلان</th>
+              <th>عنوان الإعلان</th>
+              <th>تاريخ البلاغ</th>
+              <th>الحالة</th>
+              <th>إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="reportsBody">
+            <tr><td colspan="9" style="text-align:center;">جاري التحميل...<\/td><\/tr>
+          <\/tbody>
+        <\/table>
+      <\/div>
+    <\/div>
+  <\/main>
+<\/div>
+
+<!-- Report Details Modal -->
+<div id="reportModal" class="modal-overlay">
+  <div class="modal-content" style="width: 600px; max-width: 95%; text-align: right;">
+    <h3>تفاصيل البلاغ</h3>
+    <div id="reportDetails" style="text-align: right; margin: 20px 0;">
+      <p><strong>رقم البلاغ:</strong> <span id="reportId">-</span></p>
+      <p><strong>نوع البلاغ:</strong> <span id="reportType">-</span></p>
+      <p><strong>من:</strong> <span id="reportFrom">-</span></p>
+      <p><strong>إلى:</strong> <span id="reportTo">-</span></p>
+      <p><strong>رقم الإعلان:</strong> <span id="reportAdNumber">-</span></p>
+      <p><strong>عنوان الإعلان:</strong> <span id="reportAdTitle">-</span></p>
+      <p><strong>تاريخ البلاغ:</strong> <span id="reportDate">-</span></p>
+      <p><strong>الحالة:</strong> <span id="reportStatus">-</span></p>
+      <p><strong>الوصف:</strong></p>
+      <p id="reportDescription" style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-top: 5px;"></p>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeReportModal()">إغلاق</button>
+      <button class="modal-confirm" id="resolveReportBtn" style="background: #16a34a;">تحديد كحل</button>
+      <button class="modal-confirm" id="rejectReportBtn" style="background: #dc2626;">رفض البلاغ</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+  let currentReports = [];
+  let selectedReportId = null;
+
+  async function checkAuth() {
+    try {
+      const response = await fetch('http://127.0.0.1:3001/api/auth/me', { credentials: 'include' });
+      if (response.ok) {
+        const user = await response.json();
+        if (user.role === 'admin') {
+          document.getElementById('loadingScreen').style.display = 'none';
+          document.getElementById('dashboardContent').style.display = 'flex';
+          document.getElementById('adminName').innerHTML = user.full_name;
+          await loadReportsFromAPI();
+          return;
+        }
+      }
+      window.location.href = 'login.html';
+    } catch (error) {
+      window.location.href = 'login.html';
+    }
+  }
+
+  async function loadReportsFromAPI() {
+    try {
+      const search = document.getElementById('searchInput')?.value || '';
+      const type = document.getElementById('typeFilter')?.value || '';
+      const status = document.getElementById('statusFilter')?.value || '';
+      
+      let url = 'http://127.0.0.1:3001/api/admin/reports?';
+      const params = [];
+      if (search) params.push(`search=${encodeURIComponent(search)}`);
+      if (type) params.push(`type=${encodeURIComponent(type)}`);
+      if (status) params.push(`status=${encodeURIComponent(status)}`);
+      url += params.join('&');
+      
+      const response = await fetch(url, { credentials: 'include' });
+      if (!response.ok) throw new Error('فشل في جلب البيانات');
+      
+      currentReports = await response.json();
+      renderReports(currentReports);
+    } catch (error) {
+      console.error('Error loading reports:', error);
+      document.getElementById('reportsBody').innerHTML = '<tr><td colspan="9" style="text-align:center; color:red;">خطأ في تحميل البيانات<\/td><\/tr>';
+    }
+  }
+
+  function getReportTypeText(type) {
+    const types = {
+      'verbal': 'إساءة لفظية',
+      'financial': 'احتيال/ وهمي',
+      'harassment': 'مضايقة / إزعاج',
+      'threat': 'تهديد / ابتزاز',
+      'seriousness': 'عدم جديّة المشتري',
+      'other': 'أخرى'
+    };
+    return types[type] || type;
+  }
+
+  function getReportTypeClass(type) {
+    const classes = {
+      'verbal': 'verbal',
+      'financial': 'financial',
+      'harassment': 'harassment',
+      'threat': 'threat',
+      'seriousness': 'seriousness',
+      'other': 'verbal'
+    };
+    return classes[type] || 'verbal';
+  }
+
+  function getStatusText(status) {
+    const map = {
+      'pending': 'قيد المراجعة',
+      'resolved': 'تم الحل',
+      'rejected': 'مرفوض'
+    };
+    return map[status] || status;
+  }
+
+  function getStatusClass(status) {
+    const classes = {
+      'pending': 'pending',
+      'resolved': 'resolved',
+      'rejected': 'rejected'
+    };
+    return classes[status] || 'pending';
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('ar-SA') + ' ' + d.toLocaleTimeString('ar-SA');
+  }
+
+  function renderReports(reports) {
+    const tbody = document.getElementById('reportsBody');
+    document.getElementById('resultsCount').innerHTML = reports.length + ' بلاغ';
+    if (!reports.length) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">لا توجد بلاغات<\/td><\/tr>';
+      return;
+    }
+    tbody.innerHTML = reports.map(report => `
+      <tr>
+        <td>${report.id}<\/td>
+        <td><span class="report-badge ${getReportTypeClass(report.type)}">${getReportTypeText(report.type)}<\/span><\/td>
+        <td>${report.from_user_name || '-'}<\/td>
+        <td>${report.to_user_name || '-'}<\/td>
+        <td>${report.ad_number || '-'}<\/td>
+        <td>${report.property_title || '-'}<\/td>
+        <td>${formatDate(report.created_at)}<\/td>
+        <td><span class="status-badge ${getStatusClass(report.status)}">${getStatusText(report.status)}<\/span><\/td>
+        <td>
+          <button class="btn-view" onclick="viewReportDetails(${report.id})">عرض التفاصيل<\/button>
+         <\/td>
+      </tr>
+    `).join('');
+  }
+
+  async function filterReports() { await loadReportsFromAPI(); }
+
+  function viewReportDetails(id) {
+  // Navigate to the new report details page
+  window.location.href = `report-details.html?id=${id}`;
+}
+
+  function closeReportModal() {
+    document.getElementById('reportModal').style.display = 'none';
+    selectedReportId = null;
+  }
+
+  async function resolveReport() {
+    if (selectedReportId) {
+      try {
+        const response = await fetch(`http://127.0.0.1:3001/api/admin/reports/${selectedReportId}/resolve`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include'
+        });
+        if (!response.ok) throw new Error('فشل في تحديث الحالة');
+        alert('تم تحديد البلاغ كحل');
+        closeReportModal();
+        await loadReportsFromAPI();
+      } catch (error) {
+        console.error('Error resolving report:', error);
+        alert('فشل في تحديث حالة البلاغ');
+      }
+    }
+  }
+
+  async function rejectReport() {
+    if (selectedReportId) {
+      try {
+        const response = await fetch(`http://127.0.0.1:3001/api/admin/reports/${selectedReportId}/reject`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include'
+        });
+        if (!response.ok) throw new Error('فشل في تحديث الحالة');
+        alert('تم رفض البلاغ');
+        closeReportModal();
+        await loadReportsFromAPI();
+      } catch (error) {
+        console.error('Error rejecting report:', error);
+        alert('فشل في تحديث حالة البلاغ');
+      }
+    }
+  }
+
+
+
+async function setupLogout() {
+  const logoutBtn = document.getElementById('logoutBtn');
+  const logoutModal = document.getElementById('logoutModal');
+  const confirmBtn = document.getElementById('confirmLogoutBtn');
+  const cancelBtn = document.getElementById('cancelLogoutBtn');
+
+  if (!logoutBtn || !logoutModal) return;
+
+  // Open modal when logout button is clicked
+  logoutBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    logoutModal.style.display = 'flex';
+  });
+
+  // Close modal when cancel is clicked
+  cancelBtn.addEventListener('click', () => {
+    logoutModal.style.display = 'none';
+  });
+
+  // Close modal when clicking outside
+  logoutModal.addEventListener('click', (e) => {
+    if (e.target === logoutModal) {
+      logoutModal.style.display = 'none';
+    }
+  });
+
+  // Confirm logout
+  confirmBtn.addEventListener('click', async () => {
+    await fetch('http://127.0.0.1:3001/api/auth/logout', { 
+      method: 'POST', 
+      credentials: 'include' 
+    });
+    localStorage.removeItem('user');
+    window.location.href = 'login.html';
+  });
+}
+
+  document.addEventListener('DOMContentLoaded', () => {
+    checkAuth();
+    setupLogout();
+    document.getElementById('searchInput')?.addEventListener('input', () => setTimeout(filterReports, 500));
+    document.getElementById('typeFilter')?.addEventListener('change', filterReports);
+    document.getElementById('statusFilter')?.addEventListener('change', filterReports);
+    document.getElementById('resolveReportBtn')?.addEventListener('click', resolveReport);
+    document.getElementById('rejectReportBtn')?.addEventListener('click', rejectReport);
+  });
+
+  window.viewReportDetails = viewReportDetails;
+  window.closeReportModal = closeReportModal;
+</script>
+
+</body>
+</html>

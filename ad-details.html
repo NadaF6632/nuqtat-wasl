@@ -1,0 +1,1104 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>تفاصيل الإعلان | نقطة وصل</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: "Tajawal", sans-serif; background: #f5f6fa; }
+    
+    .loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #f5f6fa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #e2e8f0;
+      border-top-color: #b58b63;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { margin-top: 16px; color: #666; font-size: 14px; }
+    
+    .dash-shell { display: none; min-height: 100vh; }
+    .dash-side { 
+      width: 260px; 
+      background: #1a1a2e; 
+      padding: 24px 16px; 
+      display: flex; 
+      flex-direction: column; 
+      justify-content: space-between; 
+      position: fixed; 
+      right: 0; 
+      top: 0; 
+      bottom: 0; 
+      overflow-y: auto;
+      z-index: 100;
+    }
+    .dash-main { 
+      flex: 1; 
+      padding: 24px 32px; 
+      margin-right: 260px;
+      min-height: 100vh;
+      overflow-y: auto;
+    }
+    .dash-center { max-width: 1000px; margin: 0 auto; }
+    
+    .dash-brand { font-weight: 900; font-size: 24px; color: #fff; margin-bottom: 32px; text-align: center; }
+    .dash-nav { display: flex; flex-direction: column; gap: 8px; }
+    .dash-link { padding: 12px 16px; border-radius: 12px; font-size: 14px; color: rgba(255,255,255,0.7); text-decoration: none; display: block; font-weight: 500; }
+    .dash-link:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    .dash-link.is-active { background: #b58b63; color: #fff; }
+    .dash-sep { height: 1px; background: rgba(255,255,255,0.1); margin: 20px 0; }
+    .dash-bottom { display: flex; flex-direction: column; gap: 10px; }
+    .dash-btn { 
+      width: 100%; 
+      padding: 10px; 
+      border-radius: 10px; 
+      border: none; 
+      cursor: pointer; 
+      font-weight: 700;
+      font-family: "Tajawal", sans-serif;
+      font-size: 14px;
+    }
+    .dash-btn--ghost { background: rgba(255,255,255,0.1); color: #fff; }
+    
+    .dash-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+    .back-button { background: none; border: none; font-size: 24px; cursor: pointer; color: #1a1a2e; margin-left: 16px; font-family: "Tajawal", sans-serif; }
+    .dash-title { font-size: 24px; font-weight: 800; color: #1a1a2e; }
+    .head-left { display: flex; align-items: center; gap: 12px; }
+    .user-avatar { width: 40px; height: 40px; background: #b58b63; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
+    
+    .action-buttons { display: flex; gap: 12px; margin: 20px 0; flex-wrap: wrap; }
+    .action-btn { 
+      padding: 10px 24px; 
+      border-radius: 10px; 
+      border: none; 
+      font-weight: 700; 
+      cursor: pointer; 
+      background: #b58b63; 
+      color: white; 
+      transition: all 0.2s;
+      font-family: "Tajawal", sans-serif;
+      font-size: 14px;
+    }
+    .action-btn:hover { opacity: 0.85; }
+    
+    .notice-box {
+      background: #fef3c7;
+      border-right: 4px solid #d97706;
+      padding: 12px 16px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+    .notice-box p { margin: 5px 0; font-size: 14px; color: #92400e; }
+    .notice-box strong { color: #b45309; }
+    
+    .table-card { background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .details-container { padding: 28px; }
+    
+    .info-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #e2e8f0; }
+    .info-label { font-weight: 800; color: #4a5568; width: 180px; }
+    .info-value { color: #1a1a2e; flex: 1; }
+    .info-value.price { color: #b58b63; font-weight: 800; font-size: 18px; }
+    
+    .section-title { font-size: 18px; font-weight: 800; color: #1a1a2e; margin: 20px 0 12px 0; padding-bottom: 8px; border-bottom: 2px solid #b58b63; display: inline-block; }
+    
+    .features-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+    .feature-badge { background: #e9d8c8; color: #744d27; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+    
+    /* Media Gallery Styles */
+    .media-gallery {
+      margin: 20px 0;
+    }
+    .media-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 15px;
+      margin-top: 10px;
+    }
+    .media-item {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #f8f9fa;
+      border: 1px solid #e2e8f0;
+    }
+    .media-item img, .media-item video {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+    }
+    .media-item .media-label {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      font-size: 11px;
+      padding: 4px 8px;
+      text-align: center;
+    }
+    .document-item {
+      background: #f8f9fa;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 15px;
+      text-align: center;
+    }
+    .document-item a {
+      color: #b58b63;
+      text-decoration: none;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .document-item a:hover {
+      text-decoration: underline;
+    }
+    
+    .status { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; }
+    .status.pending { background: #e2e8f0; color: #4a5568; }
+    .status.approved { background: #dbeafe; color: #1e40af; }
+    .status.rejected { background: #fee2e2; color: #dc2626; }
+    .status.active { background: #dcfce7; color: #16a34a; }
+    .status.stopped { background: #fef3c7; color: #b45309; }
+    .status.closed { background: #2d3436; color: #fff; }
+    
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .reject-modal {
+      background: #fff;
+      width: 850px;
+      max-width: 95%;
+      border-radius: 16px;
+      padding: 28px;
+      position: relative;
+      box-shadow: 0 10px 35px rgba(0,0,0,.15);
+    }
+    .close-modal {
+      position: absolute;
+      top: 14px;
+      left: 18px;
+      border: none;
+      background: none;
+      font-size: 28px;
+      cursor: pointer;
+      color: #777;
+      font-family: "Tajawal", sans-serif;
+    }
+    .close-modal:hover { color: #000; }
+    .reject-modal h2 { text-align: center; margin-bottom: 22px; color: #1a1a2e; }
+    .reject-top-info {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 22px;
+      font-size: 14px;
+      color: #444;
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 12px;
+    }
+    .reject-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .reject-grid label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #333;
+      cursor: pointer;
+    }
+    .reject-grid input { width: 16px; height: 16px; }
+    .extra-note label { display: block; margin-bottom: 8px; font-weight: 700; color: #333; }
+    .extra-note textarea {
+      width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 14px;
+      resize: vertical;
+      font-family: "Tajawal", sans-serif;
+      font-size: 14px;
+    }
+    .extra-note textarea:focus { outline: none; border-color: #b58b63; }
+    .modal-actions-center { text-align: center; margin-top: 24px; }
+    .send-reject-btn {
+      background: #b58b63;
+      color: #fff;
+      border: none;
+      padding: 12px 32px;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 15px;
+      transition: all 0.2s;
+      font-family: "Tajawal", sans-serif;
+    }
+    .send-reject-btn:hover { opacity: 0.9; }
+    
+    .logout-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.35);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    .logout-box {
+      width: min(420px,90%);
+      background: #fff;
+      border-radius: 24px;
+      padding: 35px 25px;
+      text-align: center;
+      animation: popup .25s ease;
+    }
+    .logout-box h3 { font-size: 28px; margin-bottom: 15px; color: #111; }
+    .logout-box p { color: #666; margin-bottom: 28px; font-size: 16px; }
+    .logout-actions { display: flex; gap: 12px; justify-content: center; }
+    .logout-actions button {
+      border: none;
+      border-radius: 14px;
+      padding: 12px 28px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: .2s;
+    }
+    .logout-confirm { background: #b58b63; color: #fff; }
+    .logout-cancel { background: #eee; }
+    .logout-actions button:hover { transform: translateY(-2px); }
+    @keyframes popup {
+      from { opacity: 0; transform: scale(.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    
+    @media (max-width: 768px) { 
+      .dash-side { width: 100%; position: relative; height: auto; }
+      .dash-main { margin-right: 0; padding: 20px; }
+      .info-row { flex-direction: column; align-items: flex-start; gap: 8px; } 
+      .info-label { width: 100%; }
+      .reject-top-info { flex-direction: column; }
+      .media-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+    }
+
+    /* Document preview styles */
+.document-preview {
+  background: #f5f5f5;
+  position: relative;
+  overflow: hidden;
+}
+
+.document-preview iframe {
+  pointer-events: none; /* Prevents scrolling inside the preview */
+}
+
+.document-preview:hover iframe {
+  pointer-events: auto; /* Allows scrolling on hover */
+}
+
+.document-preview .media-label {
+  background: rgba(0,0,0,0.8);
+}
+
+/* Logout Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 28px;
+  animation: popupShow .25s ease;
+}
+
+.logout-modal-box {
+  width: 340px;
+  max-width: 85%;
+  padding: 28px 22px;
+  text-align: center;
+}
+
+.logout-modal-box h3 {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 10px;
+  color: #111827;
+}
+
+.logout-modal-box p {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.modal-confirm {
+  background: #b58b63;
+  color: #fff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.modal-confirm:hover {
+  background: #9d7550;
+}
+
+.modal-cancel {
+  background: #f3f4f6;
+  color: #111827;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.modal-cancel:hover {
+  background: #e5e7eb;
+}
+
+@keyframes popupShow {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+  </style>
+</head>
+
+<!-- Logout Confirmation Modal -->
+<div id="logoutModal" class="modal-overlay">
+  <div class="modal-content logout-modal-box">
+    <h3>تأكيد تسجيل الخروج</h3>
+    <p>هل أنت متأكد أنك تريد تسجيل الخروج؟</p>
+    <div class="modal-actions">
+      <button id="confirmLogoutBtn" class="modal-confirm">نعم، خروج</button>
+      <button id="cancelLogoutBtn" class="modal-cancel">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<body>
+
+<div class="loading-screen" id="loadingScreen">
+  <div style="text-align: center;">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">جاري التحقق من الجلسة...</div>
+  </div>
+</div>
+
+<div class="dash-shell" id="dashboardContent">
+  <aside class="dash-side">
+    <div>
+      <div class="dash-brand">نقطة وصل</div>
+      <nav class="dash-nav">
+        <a class="dash-link" href="admin.html">لوحة التحكم</a>
+        <a class="dash-link is-active" href="admin-properties.html">الإعلانات</a>
+        <a class="dash-link" href="users.html">المستخدمين</a>
+        <a class="dash-link" href="reports.html">البلاغات</a>
+        <a class="dash-link" href="admin-settings.html"> الإعدادات</a>
+        <a class="dash-link" href="admin-payments.html"> المدفوعات</a>
+      </nav>
+    </div>
+    <div>
+      <div class="dash-sep"></div>
+      <div class="dash-bottom">
+        <button class="dash-btn dash-btn--ghost" id="logoutBtn">تسجيل الخروج</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="dash-main">
+    <div class="dash-center">
+      <div class="dash-head">
+        <div>
+          <button class="back-button" onclick="window.location.href='admin-properties.html'">→</button>
+          <span class="dash-title">تفاصيل الإعلان</span>
+        </div>
+        <div class="head-left"><span id="adminName"></span><div class="user-avatar">أ</div></div>
+      </div>
+
+      <div id="noticeArea"></div>
+      <div id="actionButtons" class="action-buttons"></div>
+
+      <div class="table-card">
+        <div id="detailsContainer" class="details-container">
+          <div style="text-align:center; padding:40px;">جاري التحميل...</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="rejectModal" class="modal-overlay">
+  <div class="reject-modal">
+    <button class="close-modal" onclick="closeRejectModal()">×</button>
+    <h2>رفض الإعلان</h2>
+    <div class="reject-top-info">
+      <div><strong>رقم الإعلان:</strong> <span id="modalAdNumber">-</span></div>
+      <div><strong>مالك الإعلان:</strong> <span id="modalOwnerName">-</span></div>
+      <div><strong>عنوان الإعلان:</strong> <span id="modalAdTitle">-</span></div>
+    </div>
+    <h4>أسباب الرفض:</h4>
+    <div class="reject-grid">
+      <label><input type="checkbox" value="السعر غير منطقي"> السعر غير منطقي</label>
+      <label><input type="checkbox" value="البيانات غير مكتملة"> البيانات غير مكتملة</label>
+      <label><input type="checkbox" value="الموقع غير مطابق للخريطة"> الموقع غير مطابق للخريطة</label>
+      <label><input type="checkbox" value="الوصف غير مطابق للواقع"> الوصف غير مطابق للواقع</label>
+      <label><input type="checkbox" value="الصور أو مقاطع الفيديو غير واضحة"> الصور أو مقاطع الفيديو غير واضحة</label>
+    </div>
+    <div class="extra-note">
+      <label>شرح إضافي:</label>
+      <textarea id="rejectReason" rows="5" placeholder="سبب الرفض هنا..."></textarea>
+    </div>
+    <div class="modal-actions-center">
+      <button class="send-reject-btn" id="confirmRejectBtn">حفظ وإرسال للمالك</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  let currentAd = null;
+  let propertyPhotos = [];
+
+  async function checkAuth() {
+    try {
+      const response = await fetch('http://127.0.0.1:3001/api/auth/me', { credentials: 'include' });
+      if (response.ok) {
+        const user = await response.json();
+        if (user.role === 'admin') {
+          document.getElementById('loadingScreen').style.display = 'none';
+          document.getElementById('dashboardContent').style.display = 'flex';
+          document.getElementById('adminName').innerHTML = user.full_name;
+          await loadAdDetails();
+          return;
+        }
+      }
+      window.location.href = 'login.html';
+    } catch (error) {
+      window.location.href = 'login.html';
+    }
+  }
+
+  function getAdId() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("id");
+  }
+
+  async function loadAdDetails() {
+    const adId = getAdId();
+    if (!adId) { 
+      document.getElementById("detailsContainer").innerHTML = '<div style="text-align:center; padding:40px;">خطأ: لم يتم تحديد الإعلان</div>'; 
+      return; 
+    }
+    
+    try {
+      const response = await fetch(`http://127.0.0.1:3001/api/admin/properties/${adId}`, { credentials: 'include' });
+      if (!response.ok) throw new Error('فشل في جلب البيانات');
+      
+      currentAd = await response.json();
+      
+      // Load photos
+      const photosRes = await fetch(`http://127.0.0.1:3001/api/properties/${adId}/photos`, { credentials: 'include' });
+      if (photosRes.ok) {
+        propertyPhotos = await photosRes.json();
+      }
+      
+      renderNotices(currentAd);
+      renderActionButtons(currentAd.status);
+      renderDetails(currentAd);
+    } catch (error) {
+      console.error(error);
+      document.getElementById("detailsContainer").innerHTML = '<div style="text-align:center; padding:40px;">الإعلان غير موجود</div>';
+    }
+  }
+
+  function renderNotices(ad) {
+    const noticeArea = document.getElementById('noticeArea');
+    let html = '';
+    
+    if (ad.modified_after_rejection === true && ad.status === 'pending') {
+      html += `
+        <div class="notice-box">
+          <p><strong>⚠️ تم تعديل العقار من قبل المالك</strong></p>
+          <p>قام المالك بتحديث بيانات العقار بعد الرفض السابق، يرجى مراجعة البيانات الجديدة أدناه.</p>
+          ${ad.rejection_reason ? `<p><strong>سبب الرفض السابق:</strong> ${ad.rejection_reason}</p>` : ''}
+        </div>
+      `;
+    } else if (ad.status === 'rejected' && ad.rejection_reason) {
+      html += `
+        <div class="notice-box">
+          <p><strong>❌ سبب الرفض:</strong> ${ad.rejection_reason}</p>
+        </div>
+      `;
+    }
+    
+    noticeArea.innerHTML = html;
+  }
+
+  function renderActionButtons(status) {
+    const container = document.getElementById('actionButtons');
+    let buttons = '';
+    
+    if (status === 'pending') {
+      buttons = `
+        <button class="action-btn" id="approveBtn">قبول الإعلان</button>
+        <button class="action-btn" id="rejectBtn">رفض الإعلان</button>
+        <button class="action-btn" id="deleteAdBtn" style="background:#dc2626;">حذف الإعلان</button>
+      `;
+    } 
+    else if (status === 'active') {
+      buttons = `
+        <button class="action-btn" id="stopBtn">إيقاف الإعلان</button>
+        <button class="action-btn" id="deleteAdBtn" style="background:#dc2626;">حذف الإعلان</button>
+      `;
+    }
+    else if (status === 'approved') {
+      buttons = `
+        <button class="action-btn" id="cancelApprovalBtn">رفع القبول</button>
+        <button class="action-btn" id="cancelRequestBtn">إلغاء الطلب</button>
+        <button class="action-btn" id="deleteAdBtn" style="background:#dc2626;">حذف الإعلان</button>
+      `;
+    }
+    else if (status === 'rejected') {
+      buttons = `
+        <button class="action-btn" id="approveBtn">قبول الإعلان</button>
+        <button class="action-btn" id="deleteAdBtn" style="background:#dc2626;">حذف الإعلان</button>
+      `;
+    }
+    else if (status === 'stopped') {
+      buttons = `
+        <button class="action-btn" id="reopenBtn">إعادة فتح</button>
+        <button class="action-btn" id="deleteAdBtn" style="background:#dc2626;">حذف الإعلان</button>
+      `;
+    }
+    else if (status === 'closed') {
+      buttons = `
+        <button class="action-btn" id="deleteAdBtn" style="background:#dc2626;">حذف الإعلان</button>
+      `;
+    }
+    
+    container.innerHTML = buttons;
+    
+    document.getElementById('approveBtn')?.addEventListener('click', approveAd);
+    document.getElementById('rejectBtn')?.addEventListener('click', openRejectModal);
+    document.getElementById('stopBtn')?.addEventListener('click', stopAd);
+    document.getElementById('deleteAdBtn')?.addEventListener('click', adminDeleteAd);
+    document.getElementById('cancelApprovalBtn')?.addEventListener('click', cancelApproval);
+    document.getElementById('cancelRequestBtn')?.addEventListener('click', cancelRequest);
+    document.getElementById('reopenBtn')?.addEventListener('click', reopenAd);
+  }
+
+  function renderMediaGallery() {
+    // Images Gallery
+    let imagesHtml = '';
+    if (propertyPhotos && propertyPhotos.length > 0) {
+      imagesHtml = `
+        <div class="media-gallery">
+          <h3 class="section-title"> صور العقار</h3>
+          <div class="media-grid">
+            ${propertyPhotos.map(photo => `
+              <div class="media-item">
+                <img src="http://127.0.0.1:3001${photo.photo_path}" alt="صورة العقار" onclick="window.open(this.src)">
+                <div class="media-label">صورة</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    } else {
+      imagesHtml = `<div class="info-row"><span class="info-label">📸 صور العقار</span><span class="info-value">لا توجد صور</span></div>`;
+    }
+    
+    // Video
+    let videoHtml = '';
+    if (currentAd.video_url) {
+      videoHtml = `
+        <div class="media-gallery">
+          <h3 class="section-title"> فيديو العقار</h3>
+          <div class="media-grid">
+            <div class="media-item">
+              <video controls style="width:100%; height:auto;">
+                <source src="http://127.0.0.1:3001${currentAd.video_url}" type="video/mp4">
+              </video>
+              <div class="media-label">فيديو</div>
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      videoHtml = `<div class="info-row"><span class="info-label"> فيديو العقار</span><span class="info-value">لا يوجد فيديو</span></div>`;
+    }
+    
+// Blueprint with preview
+let blueprintHtml = '';
+if (currentAd.blueprint_url) {
+  const fileExt = currentAd.blueprint_url.split('.').pop().toLowerCase();
+  const isPdf = fileExt === 'pdf';
+  const fileUrl = `http://127.0.0.1:3001${currentAd.blueprint_url}`;
+  
+  if (isPdf) {
+    blueprintHtml = `
+      <div class="media-gallery">
+        <h3 class="section-title"> المخطط الهندسي</h3>
+        <div class="media-grid">
+          <div class="media-item document-preview">
+            <iframe src="${fileUrl}" style="width:100%; height:200px; border:none;"></iframe>
+            <div class="media-label"> مخطط هندسي (PDF)</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;">
+          <a href="${fileUrl}" target="_blank" style="color:#b58b63;"> تحميل الملف</a>
+        </div>
+      </div>
+    `;
+  } else {
+    // Image format (jpg, png, etc.)
+    blueprintHtml = `
+      <div class="media-gallery">
+        <h3 class="section-title"> المخطط الهندسي</h3>
+        <div class="media-grid">
+          <div class="media-item">
+            <img src="${fileUrl}" alt="المخطط الهندسي" onclick="window.open(this.src)">
+            <div class="media-label"> مخطط هندسي</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+} else {
+  blueprintHtml = `<div class="info-row"><span class="info-label"> المخطط الهندسي</span><span class="info-value">لا يوجد مخطط</span></div>`;
+}
+
+// Legal Document with preview
+let legalHtml = '';
+if (currentAd.legal_document_url) {
+  const fileExt = currentAd.legal_document_url.split('.').pop().toLowerCase();
+  const isPdf = fileExt === 'pdf';
+  const fileUrl = `http://127.0.0.1:3001${currentAd.legal_document_url}`;
+  
+  if (isPdf) {
+    legalHtml = `
+      <div class="media-gallery">
+        <h3 class="section-title"> مستند ملكية العقار</h3>
+        <div class="media-grid">
+          <div class="media-item document-preview">
+            <iframe src="${fileUrl}" style="width:100%; height:200px; border:none;"></iframe>
+            <div class="media-label"> مستند ملكية (PDF)</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;">
+          <a href="${fileUrl}" target="_blank" style="color:#b58b63;"> تحميل المستند</a>
+        </div>
+      </div>
+    `;
+  } else {
+    // Image format (jpg, png, etc.)
+    legalHtml = `
+      <div class="media-gallery">
+        <h3 class="section-title"> مستند ملكية العقار</h3>
+        <div class="media-grid">
+          <div class="media-item">
+            <img src="${fileUrl}" alt="مستند الملكية" onclick="window.open(this.src)">
+            <div class="media-label"> مستند ملكية</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+} else {
+  legalHtml = `<div class="info-row"><span class="info-label"> مستند ملكية العقار</span><span class="info-value">لا يوجد مستند</span></div>`;
+}
+    
+    return { imagesHtml, videoHtml, blueprintHtml, legalHtml };
+  }
+
+  function renderDetails(ad) {
+    const media = renderMediaGallery();
+    
+    const container = document.getElementById("detailsContainer");
+    container.innerHTML = `
+      <div class="info-row">
+        <span class="info-label">رقم الإعلان</span>
+        <span class="info-value">${ad.ad_number || '#' + ad.id}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">عنوان الإعلان</span>
+        <span class="info-value">${ad.title || '-'}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">الوصف</span>
+        <span class="info-value">${ad.description || 'لا يوجد وصف'}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">السعر</span>
+        <span class="info-value price">${new Intl.NumberFormat('ar-SA').format(ad.price)} ريال</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">الحالة</span>
+        <span class="info-value"><span class="status ${ad.status}">${getStatusText(ad.status)}</span></span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">تاريخ النشر</span>
+        <span class="info-value">${formatDate(ad.created_at)}</span>
+      </div>
+      
+      <div class="section-title"> موقع العقار</div>
+      <div class="info-row"><span class="info-label">المدينة</span><span class="info-value">${ad.city || '-'}</span></div>
+      <div class="info-row"><span class="info-label">الحي</span><span class="info-value">${ad.district || '-'}</span></div>
+      <div id="map" style="height: 300px; margin-top: 15px; border-radius: 12px;"></div>
+      
+      <div class="section-title"> مواصفات العقار</div>
+      <div class="info-row"><span class="info-label">نوع العقار</span><span class="info-value">${ad.property_type || '-'}</span></div>
+      <div class="info-row"><span class="info-label">نوع الإعلان</span><span class="info-value">${ad.listing_type || '-'}</span></div>
+      <div class="info-row"><span class="info-label">الاستخدام</span><span class="info-value">${ad.usage || '-'}</span></div>
+      <div class="info-row"><span class="info-label">الواجهة</span><span class="info-value">${ad.facade || '-'}</span></div>
+      <div class="info-row"><span class="info-label">المساحة</span><span class="info-value">${ad.area_space || '-'} م²</span></div>
+      <div class="info-row"><span class="info-label">عدد الغرف</span><span class="info-value">${ad.bedrooms || '-'}</span></div>
+      <div class="info-row"><span class="info-label">عدد دورات المياه</span><span class="info-value">${ad.bathrooms || '-'}</span></div>
+      <div class="info-row"><span class="info-label">عمر العقار</span><span class="info-value">${ad.property_age || '-'} سنة</span></div>
+      
+      <div class="section-title"> المزايا والخدمات</div>
+      <div class="features-list">${ad.features && ad.features.length > 0 ? ad.features.map(f => `<span class="feature-badge">${f}</span>`).join('') : '<span class="feature-badge">لا توجد مزايا</span>'}</div>
+      
+      <!-- Media Sections -->
+      ${media.imagesHtml}
+      ${media.videoHtml}
+      ${media.blueprintHtml}
+      ${media.legalHtml}
+      
+      <div class="section-title"> بيانات المالك</div>
+      <div class="info-row"><span class="info-label">اسم المالك</span><span class="info-value">${ad.owner_name || '-'}</span></div>
+      <div class="info-row"><span class="info-label">رقم الجوال</span><span class="info-value">${ad.owner_phone || '-'}</span></div>
+      <div class="info-row"><span class="info-label">رقم الهوية</span><span class="info-value">${ad.owner_national_id || '-'}</span></div>
+    `;
+    
+    // Initialize map after DOM is updated
+    if (ad.lat && ad.lng) {
+      setTimeout(() => {
+        const lat = parseFloat(ad.lat);
+        const lng = parseFloat(ad.lng);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          const map = L.map('map').setView([lat, lng], 14);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+          }).addTo(map);
+          L.marker([lat, lng]).addTo(map);
+        }
+      }, 100);
+    }
+  }
+
+  function getStatusText(status) {
+    const map = { 
+      pending: 'قيد المراجعة', 
+      approved: 'مقبول', 
+      rejected: 'مرفوض', 
+      active: 'نشط', 
+      stopped: 'موقف',
+      closed: 'مغلق'
+    };
+    return map[status] || status;
+  }
+
+  function formatDate(dateStr) { 
+    if (!dateStr) return '-'; 
+    const d = new Date(dateStr); 
+    return d.toLocaleDateString('ar-SA'); 
+  }
+
+  async function updatePropertyStatus(propertyId, newStatus, reason = null, resetModifiedFlag = false) {
+    try {
+      const body = { status: newStatus };
+      if (reason !== null) body.reason = reason;
+      if (resetModifiedFlag) body.modified_after_rejection = false;
+      
+      const response = await fetch(`http://127.0.0.1:3001/api/admin/properties/${propertyId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body)
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'فشل في تحديث الحالة');
+      }
+      
+      if (data.property) {
+        return data.property;
+      } else {
+        const updatedRes = await fetch(`http://127.0.0.1:3001/api/admin/properties/${propertyId}`, {
+          credentials: 'include'
+        });
+        const updated = await updatedRes.json();
+        return updated;
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('فشل في تحديث حالة الإعلان: ' + error.message);
+      return null;
+    }
+  }
+
+  async function approveAd() {
+    if (confirm('هل تريد قبول هذا الإعلان؟')) {
+      const updated = await updatePropertyStatus(currentAd.id, 'approved', null, true);
+      if (updated) {
+        currentAd = updated;
+        renderNotices(currentAd);
+        renderActionButtons(currentAd.status);
+        renderDetails(currentAd);
+        alert('تم قبول الإعلان بنجاح');
+      }
+    }
+  }
+
+  function openRejectModal() {
+    document.getElementById('modalAdNumber').textContent = currentAd.ad_number || '#' + currentAd.id;
+    document.getElementById('modalOwnerName').textContent = currentAd.owner_name || '-';
+    document.getElementById('modalAdTitle').textContent = currentAd.title || '-';
+    
+    document.getElementById('rejectReason').value = '';
+    document.querySelectorAll('.reject-grid input').forEach(cb => {
+      cb.checked = false;
+    });
+    
+    document.getElementById('rejectModal').style.display = 'flex';
+  }
+
+  function closeRejectModal() {
+    document.getElementById('rejectModal').style.display = 'none';
+  }
+
+  async function confirmReject() {
+    const selectedReasons = Array.from(
+      document.querySelectorAll('.reject-grid input:checked')
+    ).map(cb => cb.value);
+    
+    const extraReason = document.getElementById('rejectReason').value.trim();
+    
+    let finalReason = selectedReasons.join(' - ');
+    if (extraReason) {
+      finalReason += (finalReason ? ' - ' : '') + extraReason;
+    }
+    
+    if (!finalReason) {
+      alert('الرجاء اختيار سبب رفض واحد على الأقل');
+      return;
+    }
+    
+    const updated = await updatePropertyStatus(currentAd.id, 'rejected', finalReason, true);
+    
+    if (updated) {
+      currentAd = updated;
+      renderNotices(currentAd);
+      renderActionButtons(currentAd.status);
+      renderDetails(currentAd);
+      closeRejectModal();
+      alert('تم رفض الإعلان وإرسال السبب للمالك');
+    }
+  }
+
+  async function stopAd() {
+    if (confirm('هل تريد إيقاف هذا الإعلان؟')) {
+      try {
+        const response = await fetch(`http://127.0.0.1:3001/api/admin/properties/${currentAd.id}/stop`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include'
+        });
+        if (!response.ok) throw new Error('فشل في إيقاف الإعلان');
+        const data = await response.json();
+        currentAd = data.property;
+        renderNotices(currentAd);
+        renderActionButtons(currentAd.status);
+        renderDetails(currentAd);
+        alert('تم إيقاف الإعلان بنجاح');
+      } catch (error) {
+        console.error('Error stopping ad:', error);
+        alert('فشل في إيقاف الإعلان');
+      }
+    }
+  }
+
+  async function adminDeleteAd() {
+    if (confirm('هل أنت متأكد من حذف هذا الإعلان؟ لا يمكن التراجع عن هذا الإجراء.')) {
+      try {
+        const response = await fetch(`http://127.0.0.1:3001/api/admin/properties/${currentAd.id}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        if (!response.ok) throw new Error('فشل في الحذف');
+        alert('تم حذف الإعلان بنجاح');
+        window.location.href = 'admin-properties.html';
+      } catch (error) {
+        alert('فشل في حذف الإعلان');
+      }
+    }
+  }
+
+  async function cancelApproval() {
+    if (confirm('هل تريد رفع القبول عن هذا الإعلان؟ سيعود إلى حالة قيد المراجعة.')) {
+      const updated = await updatePropertyStatus(currentAd.id, 'pending');
+      if (updated) {
+        currentAd = updated;
+        renderNotices(currentAd);
+        renderActionButtons(currentAd.status);
+        renderDetails(currentAd);
+        alert('تم رفع القبول، الإعلان الآن قيد المراجعة');
+      }
+    }
+  }
+
+  async function cancelRequest() {
+    if (confirm('هل تريد إلغاء طلب هذا الإعلان؟')) {
+      const updated = await updatePropertyStatus(currentAd.id, 'stopped');
+      if (updated) {
+        currentAd = updated;
+        renderNotices(currentAd);
+        renderActionButtons(currentAd.status);
+        renderDetails(currentAd);
+        alert('تم إلغاء طلب الإعلان');
+      }
+    }
+  }
+
+  async function reopenAd() {
+    if (confirm('هل تريد إعادة فتح هذا الإعلان؟ سيعود إلى حالة قيد المراجعة.')) {
+      try {
+        const response = await fetch(`http://127.0.0.1:3001/api/admin/properties/${currentAd.id}/reopen`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include'
+        });
+        
+        if (!response.ok) throw new Error('فشل في إعادة الفتح');
+        
+        const data = await response.json();
+        currentAd = data.property;
+        renderNotices(currentAd);
+        renderActionButtons(currentAd.status);
+        renderDetails(currentAd);
+        alert('تم إعادة فتح الإعلان للمراجعة');
+      } catch (error) {
+        console.error('Error reopening ad:', error);
+        alert('فشل في إعادة فتح الإعلان');
+      }
+    }
+  }
+
+async function setupLogout() {
+  const logoutBtn = document.getElementById('logoutBtn');
+  const logoutModal = document.getElementById('logoutModal');
+  const confirmBtn = document.getElementById('confirmLogoutBtn');
+  const cancelBtn = document.getElementById('cancelLogoutBtn');
+
+  if (!logoutBtn || !logoutModal) return;
+
+  // Open modal when logout button is clicked
+  logoutBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    logoutModal.style.display = 'flex';
+  });
+
+  // Close modal when cancel is clicked
+  cancelBtn.addEventListener('click', () => {
+    logoutModal.style.display = 'none';
+  });
+
+  // Close modal when clicking outside
+  logoutModal.addEventListener('click', (e) => {
+    if (e.target === logoutModal) {
+      logoutModal.style.display = 'none';
+    }
+  });
+
+  // Confirm logout
+  confirmBtn.addEventListener('click', async () => {
+    await fetch('http://127.0.0.1:3001/api/auth/logout', { 
+      method: 'POST', 
+      credentials: 'include' 
+    });
+    localStorage.removeItem('user');
+    window.location.href = 'login.html';
+  });
+}
+
+  document.addEventListener('DOMContentLoaded', () => {
+    checkAuth();
+    setupLogout();
+    document.getElementById('confirmRejectBtn')?.addEventListener('click', confirmReject);
+  });
+
+  window.addEventListener('click', (e) => {
+    const modal = document.getElementById('rejectModal');
+    if (e.target === modal) {
+      closeRejectModal();
+    }
+  });
+</script>
+
+</body>
+</html>

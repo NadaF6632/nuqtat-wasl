@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>حسابي - نقطة وصل</title>
+<link rel="stylesheet" href="Style.css" />
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+<div class="account-layout">
+
+  <!-- Right Sidebar -->
+  <aside class="account-sidebar">
+
+    <div class="account-menu">
+      <a href="#">العقارات المفضلة</a>
+      <a href="#" class="active">المحادثات</a>
+    </div>
+
+    <div class="account-bottom">
+      <a href="#">الإعدادات</a>
+      <a href="#" class="logout">تسجيل الخروج</a>
+    </div>
+
+  </aside>
+
+  <!-- Owners List -->
+  <div class="chat-list">
+
+    <div class="chat-item active">
+      <img src="property1.jpg">
+      <div class="meta">
+        <div>فيلا حي النخبة</div>
+        <div>المالك فهد محمد</div>
+      </div>
+    </div>
+
+    <div class="chat-item">
+      <img src="property2.jpg">
+      <div class="meta">
+        <div>شقة حي قرطبة</div>
+        <div>المالك بدر سلطان</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Chat Window -->
+  <div class="chat-window">
+
+    <div class="chat-header">
+      <div>فيلا حي النخبة - فهد محمد</div>
+      <div class="report-btn">الإبلاغ عن المستخدم</div>
+    </div>
+
+    <div class="chat-messages">
+      <div class="msg owner">السلام عليكم، هل العقار مازال متاح؟</div>
+      <div class="msg user">وعليكم السلام، نعم متاح</div>
+    </div>
+
+    <div class="chat-input">
+      <input type="text" placeholder="اكتب رسالتك...">
+      <button>إرسال</button>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- LOGOUT MODAL -->
+
+<div id="logoutModal" class="logout-modal">
+
+  <div class="logout-box">
+
+    <h3>تأكيد تسجيل الخروج</h3>
+
+    <p>
+      هل أنت متأكد أنك تريد تسجيل الخروج؟
+    </p>
+
+    <div class="logout-actions">
+
+      <button
+        id="confirmLogout"
+        class="logout-confirm"
+      >
+        نعم، خروج
+      </button>
+
+      <button
+        id="cancelLogout"
+        class="logout-cancel"
+      >
+        إلغاء
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+// =========================
+// Fake Database (Temporary)
+// =========================
+
+const chats = {
+  1: {
+    ownerName: "فهد محمد",
+    property: "فيلا حي النخبة",
+    messages: [
+      { sender: "owner", text: "السلام عليكم، هل العقار مازال متاح؟" },
+      { sender: "user", text: "وعليكم السلام، نعم متاح" }
+    ]
+  },
+  2: {
+    ownerName: "بدر سلطان",
+    property: "شقة حي قرطبة",
+    messages: [
+      { sender: "owner", text: "هل السعر قابل للتفاوض؟" }
+    ]
+  }
+};
+
+let currentChatId = 1;
+
+// Elements
+const chatItems = document.querySelectorAll(".chat-item");
+const chatHeader = document.querySelector(".chat-header div:first-child");
+const chatMessages = document.querySelector(".chat-messages");
+const input = document.querySelector(".chat-input input");
+const sendBtn = document.querySelector(".chat-input button");
+
+// =========================
+// Load Chat
+// =========================
+
+function loadChat(id) {
+  currentChatId = id;
+
+  const chat = chats[id];
+
+  // Update Header
+  chatHeader.textContent = `${chat.property} - ${chat.ownerName}`;
+
+  // Clear Messages
+  chatMessages.innerHTML = "";
+
+  chat.messages.forEach(msg => {
+    const div = document.createElement("div");
+    div.classList.add("msg", msg.sender);
+    div.textContent = msg.text;
+    chatMessages.appendChild(div);
+  });
+
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// =========================
+// Change Active Owner
+// =========================
+
+chatItems.forEach((item, index) => {
+  item.addEventListener("click", () => {
+
+    document.querySelector(".chat-item.active")?.classList.remove("active");
+    item.classList.add("active");
+
+    loadChat(index + 1);
+  });
+});
+
+// =========================
+// Send Message
+// =========================
+
+function sendMessage() {
+  const text = input.value.trim();
+  if (!text) return;
+
+  const message = { sender: "user", text };
+  chats[currentChatId].messages.push(message);
+
+  loadChat(currentChatId);
+
+  input.value = "";
+
+  // Fake auto reply
+  setTimeout(() => {
+    chats[currentChatId].messages.push({
+      sender: "owner",
+      text: "تم استلام رسالتك 👍"
+    });
+    loadChat(currentChatId);
+  }, 1000);
+}
+
+sendBtn.addEventListener("click", sendMessage);
+input.addEventListener("keypress", e => {
+  if (e.key === "Enter") sendMessage();
+});
+
+// Load first chat
+loadChat(1);
+ // Logout model 
+function setupLogout(){
+
+  const logoutBtn =
+    document.getElementById("logoutBtn");
+
+  const logoutModal =
+    document.getElementById("logoutModal");
+
+  const confirmLogout =
+    document.getElementById("confirmLogout");
+
+  const cancelLogout =
+    document.getElementById("cancelLogout");
+
+  // فتح المودال
+
+  logoutBtn.onclick = () => {
+
+    logoutModal.style.display = "flex";
+
+  };
+
+  // إلغاء
+
+  cancelLogout.onclick = () => {
+
+    logoutModal.style.display = "none";
+
+  };
+
+  // تأكيد الخروج
+
+  confirmLogout.onclick = async () => {
+
+    await fetch(
+      "http://127.0.0.1:3001/api/auth/logout",
+      {
+        method:"POST",
+        credentials:"include"
+      }
+    );
+
+    window.location.href =
+      "login.html";
+
+  };
+
+}
+</script>
+
+</body>
+</html>
